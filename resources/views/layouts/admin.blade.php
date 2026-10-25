@@ -24,6 +24,18 @@
                         <i class="bi bi-people-fill me-2"></i> Usuarios
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="{{ route('memos.index') }}"
+                       class="nav-link {{ request()->routeIs('memos.*') ? 'active' : 'text-white' }}">
+                        <i class="bi bi-file-text me-2"></i> Memos y Oficios
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('permisos.index') }}"
+                       class="nav-link {{ request()->routeIs('permisos.*') ? 'active' : 'text-white' }}">
+                        <i class="bi bi-calendar-check me-2"></i> Permisos Administrativos
+                    </a>
+                </li>
             </ul>
             <hr>
             <div class="dropdown">

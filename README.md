@@ -138,6 +138,9 @@ docker compose ps             # Estado de servicios
 
 ### Laravel (dentro del contenedor)
 
+# Test de tiempos
+docker compose logs -f laravel.test 
+
 ```bash
 # Ejecutar un comando artisan
 docker compose exec -T laravel.test php artisan <comando>
