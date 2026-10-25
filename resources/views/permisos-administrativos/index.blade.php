@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('content')
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center sgd-page-header">
         <h1 class="h3">Permisos Administrativos</h1>
         <a href="{{ route('permisos.create') }}" class="btn btn-primary">
             <i class="bi bi-plus-lg me-1"></i> Solicitar Permiso
@@ -9,16 +9,16 @@
     </div>
 
     {{-- Días acumulados --}}
-    <div class="card shadow-sm mb-3">
+    <div class="card shadow-sm mb-3 dias-acumulados">
         <div class="card-body">
             <div class="d-flex align-items-center">
                 <i class="bi bi-calendar-week fs-3 me-3 text-primary"></i>
                 <div>
                     <strong>Días acumulados en el año:</strong>
-                    <span class="fs-5 fw-bold ms-2">{{ $diasAcumulados }}</span>
+                    <span class="display-number ms-2">{{ $diasAcumulados }}</span>
                 </div>
                 @if ($diasAcumulados >= 10)
-                    <span class="badge bg-warning text-dark ms-3 fs-6">
+                    <span class="badge bg-warning ms-3 fs-6">
                         <i class="bi bi-exclamation-triangle me-1"></i> Cerca del límite
                     </span>
                 @endif
@@ -31,7 +31,7 @@
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
-                    <thead class="table-light">
+                    <thead>
                         <tr>
                             <th>Funcionario</th>
                             <th>Inicio</th>
@@ -58,7 +58,7 @@
                                 <td>{{ $permiso->diasSolicitados() }}</td>
                                 <td>
                                     @if ($permiso->estado === 'pendiente')
-                                        <span class="badge bg-warning text-dark rounded-pill">Pendiente</span>
+                                        <span class="badge bg-warning rounded-pill">Pendiente</span>
                                     @elseif ($permiso->estado === 'aprobado')
                                         <span class="badge bg-success rounded-pill">Aprobado</span>
                                     @else
@@ -75,11 +75,17 @@
                                         </a>
                                         <form action="{{ route('permisos.destroy', $permiso->id) }}"
                                               method="POST"
-                                              class="d-inline"
-                                              onsubmit="return confirm('¿Está seguro de eliminar esta solicitud?');">
+                                              class="d-inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger me-1" title="Eliminar">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger me-1"
+                                                    title="Eliminar"
+                                                    data-confirm-modal
+                                                    data-confirm-message="¿Está seguro de eliminar esta solicitud de permiso?"
+                                                    data-confirm-btn="Eliminar"
+                                                    data-confirm-icon="bi-trash"
+                                                    data-confirm-btn-class="btn-danger">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
@@ -91,10 +97,14 @@
                                               method="POST"
                                               class="d-inline me-1">
                                             @csrf
-                                            <button type="submit"
+                                            <button type="button"
                                                     class="btn btn-sm btn-outline-success"
-                                                    onclick="return confirm('¿Aprobar este permiso?')"
-                                                    title="Aprobar">
+                                                    title="Aprobar"
+                                                    data-confirm-modal
+                                                    data-confirm-message="¿Aprobar este permiso de {{ $permiso->user->name ?? '—' }}?"
+                                                    data-confirm-btn="Aprobar permiso"
+                                                    data-confirm-icon="bi-check-lg"
+                                                    data-confirm-btn-class="btn-success">
                                                 <i class="bi bi-check-lg"></i>
                                             </button>
                                         </form>
@@ -102,10 +112,14 @@
                                               method="POST"
                                               class="d-inline">
                                             @csrf
-                                            <button type="submit"
+                                            <button type="button"
                                                     class="btn btn-sm btn-outline-danger"
-                                                    onclick="return confirm('¿Rechazar este permiso?')"
-                                                    title="Rechazar">
+                                                    title="Rechazar"
+                                                    data-confirm-modal
+                                                    data-confirm-message="¿Rechazar este permiso de {{ $permiso->user->name ?? '—' }}?"
+                                                    data-confirm-btn="Rechazar permiso"
+                                                    data-confirm-icon="bi-x-lg"
+                                                    data-confirm-btn-class="btn-danger">
                                                 <i class="bi bi-x-lg"></i>
                                             </button>
                                         </form>

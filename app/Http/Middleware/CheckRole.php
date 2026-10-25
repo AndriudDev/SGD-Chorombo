@@ -17,7 +17,7 @@ class CheckRole
     public function handle(Request $request, Closure $next, ...$roles)
     {
         if (Auth::guest()) {
-            throw new HttpException(403, 'Unauthorized');
+            throw new HttpException(403, 'No autorizado. Debe iniciar sesión para acceder a esta página.');
         }
 
         // Flatten pipe-separated roles (e.g. 'admin|editor')
@@ -31,6 +31,6 @@ class CheckRole
             }
         }
 
-        throw new HttpException(403, 'Forbidden');
+        throw new HttpException(403, 'Acceso denegado. No tienes permisos suficientes para acceder a esta página.');
     }
 }

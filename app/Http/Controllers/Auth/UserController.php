@@ -27,7 +27,7 @@ class UserController extends Controller
         $roles = Role::orderBy('display_name')->get();
 
         return view('users.form', [
-            'user'  => null,
+            'user' => null,
             'roles' => $roles,
         ]);
     }
@@ -35,12 +35,12 @@ class UserController extends Controller
     public function store(StoreUserRequest $request): RedirectResponse
     {
         $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
+            'name' => $request->name,
+            'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
-        $user->roles()->sync($request->roles);
+        $user->roles()->sync([$request->role]);
 
         return redirect()->route('users.index')
             ->with('success', 'Usuario creado correctamente.');
@@ -58,7 +58,7 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
         $data = [
-            'name'  => $request->name,
+            'name' => $request->name,
             'email' => $request->email,
         ];
 
@@ -67,7 +67,7 @@ class UserController extends Controller
         }
 
         $user->update($data);
-        $user->roles()->sync($request->roles);
+        $user->roles()->sync([$request->role]);
 
         return redirect()->route('users.index')
             ->with('success', 'Usuario actualizado correctamente.');

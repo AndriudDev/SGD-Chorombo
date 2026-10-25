@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('content')
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center sgd-page-header">
         <h1 class="h3">Usuarios</h1>
         <a href="{{ route('users.create') }}" class="btn btn-primary">
             <i class="bi bi-plus-lg me-1"></i> Crear Usuario
@@ -12,7 +12,7 @@
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
-                    <thead class="table-light">
+                    <thead>
                         <tr>
                             <th>Nombre</th>
                             <th>Email</th>
@@ -42,11 +42,17 @@
                                     </a>
                                     <form action="{{ route('users.destroy', $user->id) }}"
                                           method="POST"
-                                          class="d-inline"
-                                          onsubmit="return confirm('¿Está seguro de eliminar este usuario?');">
+                                          class="d-inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                title="Eliminar"
+                                                data-confirm-modal
+                                                data-confirm-message="¿Está seguro de eliminar el usuario «{{ $user->name }}»? Esta acción no se puede deshacer."
+                                                data-confirm-btn="Eliminar usuario"
+                                                data-confirm-icon="bi-trash"
+                                                data-confirm-btn-class="btn-danger">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>

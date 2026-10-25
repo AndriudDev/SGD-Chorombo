@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\Correspondencia\MemoController;
 use App\Http\Controllers\RRHH\PermisoAdminController;
@@ -11,23 +10,21 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('guest')->group(function () {
     Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('login', [LoginController::class, 'login']);
-
-    Route::get('register', [RegisterController::class, 'showRegisterForm'])->name('register');
-    Route::post('register', [RegisterController::class, 'register']);
 });
 
 // Authenticated routes
 Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 });
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
 
-// Admin panel — dashboard redirect
+// Admin panel — solo rol administración
 Route::middleware(['auth', 'role:administracion'])->prefix('admin')->group(function () {
-    Route::get('/', fn () => redirect()->route('users.index'))->name('dashboard');
+    Route::get('/', fn () => redirect()->route('users.index'))->name('admin.index');
 
     Route::resource('users', UserController::class)->except('show');
 });

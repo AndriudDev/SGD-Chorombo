@@ -5,7 +5,7 @@
         $isEdit = isset($memo) && $memo !== null;
     @endphp
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center sgd-page-header">
         <h1 class="h3">{{ $isEdit ? 'Editar Memo/Oficio' : 'Nuevo Memo/Oficio' }}</h1>
         <a href="{{ route('memos.index') }}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i> Volver
@@ -24,12 +24,16 @@
 
                 {{-- Folio --}}
                 <div class="mb-3">
-                    <label for="folio" class="form-label">Folio</label>
+                    <label for="folio" class="form-label">
+                        Folio
+                        <span class="required-asterisk">*</span>
+                    </label>
                     <input type="text"
                            class="form-control @error('folio') is-invalid @enderror"
                            id="folio"
                            name="folio"
                            value="{{ old('folio', $isEdit ? $memo->folio : '') }}"
+                           placeholder="Ej: MEMO-2025-001"
                            required>
                     @error('folio')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -38,7 +42,10 @@
 
                 {{-- Tipo --}}
                 <div class="mb-3">
-                    <label for="tipo" class="form-label">Tipo</label>
+                    <label for="tipo" class="form-label">
+                        Tipo
+                        <span class="required-asterisk">*</span>
+                    </label>
                     <select class="form-select @error('tipo') is-invalid @enderror"
                             id="tipo"
                             name="tipo"
@@ -54,7 +61,10 @@
 
                 {{-- Fecha --}}
                 <div class="mb-3">
-                    <label for="fecha" class="form-label">Fecha</label>
+                    <label for="fecha" class="form-label">
+                        Fecha
+                        <span class="required-asterisk">*</span>
+                    </label>
                     <input type="date"
                            class="form-control @error('fecha') is-invalid @enderror"
                            id="fecha"
@@ -68,12 +78,16 @@
 
                 {{-- Destinatario --}}
                 <div class="mb-3">
-                    <label for="destinatario" class="form-label">Destinatario</label>
+                    <label for="destinatario" class="form-label">
+                        Destinatario
+                        <span class="required-asterisk">*</span>
+                    </label>
                     <input type="text"
                            class="form-control @error('destinatario') is-invalid @enderror"
                            id="destinatario"
                            name="destinatario"
                            value="{{ old('destinatario', $isEdit ? $memo->destinatario : '') }}"
+                           placeholder="Nombre del destinatario"
                            required>
                     @error('destinatario')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -82,11 +96,15 @@
 
                 {{-- Asunto --}}
                 <div class="mb-3">
-                    <label for="asunto" class="form-label">Asunto</label>
+                    <label for="asunto" class="form-label">
+                        Asunto
+                        <span class="required-asterisk">*</span>
+                    </label>
                     <textarea class="form-control @error('asunto') is-invalid @enderror"
                               id="asunto"
                               name="asunto"
                               rows="4"
+                              placeholder="Describa el asunto del memo u oficio"
                               required>{{ old('asunto', $isEdit ? $memo->asunto : '') }}</textarea>
                     @error('asunto')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -95,7 +113,7 @@
 
                 {{-- Archivo --}}
                 <div class="mb-3">
-                    <label for="archivo" class="form-label">Archivo</label>
+                    <label for="archivo" class="form-label">Archivo adjunto</label>
                     @if ($isEdit && $memo->archivo)
                         <div class="mb-2">
                             <small class="text-muted">Archivo actual:</small>
@@ -114,15 +132,14 @@
                     @error('archivo')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
-                    @if (!$isEdit)
-                        <div class="form-text">Formatos permitidos: PDF, DOC, DOCX. Tamaño máximo: 15 MB.</div>
-                    @endif
+                    <div class="form-text">Formatos permitidos: PDF, DOC, DOCX. Tamaño máximo: 15 MB.</div>
                 </div>
 
                 <hr>
                 <div class="d-flex justify-content-end gap-2">
                     <a href="{{ route('memos.index') }}" class="btn btn-outline-secondary">Cancelar</a>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary btn-loading-submit">
+                        <i class="bi bi-check-lg me-1"></i>
                         {{ $isEdit ? 'Actualizar Memo/Oficio' : 'Crear Memo/Oficio' }}
                     </button>
                 </div>

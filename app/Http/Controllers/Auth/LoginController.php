@@ -20,17 +20,21 @@ class LoginController extends Controller
     public function login(LoginRequest $request): RedirectResponse
     {
         $credentials = $request->only('email', 'password');
-        $remember    = $request->boolean('remember');
+        $remember = $request->boolean('remember');
 
         if (! Auth::attempt($credentials, $remember)) {
             throw ValidationException::withMessages([
-                'email' => __('auth.failed'),
+                'email' => 'Credenciales inválidas. Verifica tu correo y contraseña.',
             ]);
         }
 
         $request->session()->regenerate();
 
-        return redirect()->intended('/admin');
+        $default = $request->user()->hasRole('administracion')
+            ? route('admin.index')
+            : route('dashboard');
+
+        return redirect()->intended($default);
     }
 
     public function logout(Request $request): RedirectResponse

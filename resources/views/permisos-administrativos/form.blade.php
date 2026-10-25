@@ -5,7 +5,7 @@
         $isEdit = isset($permiso) && $permiso !== null;
     @endphp
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center sgd-page-header">
         <h1 class="h3">{{ $isEdit ? 'Editar Permiso' : 'Solicitar Permiso' }}</h1>
         <a href="{{ route('permisos.index') }}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i> Volver
@@ -23,7 +23,10 @@
 
                 {{-- Fecha Inicio --}}
                 <div class="mb-3">
-                    <label for="fecha_inicio" class="form-label">Fecha de inicio</label>
+                    <label for="fecha_inicio" class="form-label">
+                        Fecha de inicio
+                        <span class="required-asterisk">*</span>
+                    </label>
                     <input type="date"
                            class="form-control @error('fecha_inicio') is-invalid @enderror"
                            id="fecha_inicio"
@@ -37,7 +40,10 @@
 
                 {{-- Fecha Fin --}}
                 <div class="mb-3">
-                    <label for="fecha_fin" class="form-label">Fecha de término</label>
+                    <label for="fecha_fin" class="form-label">
+                        Fecha de término
+                        <span class="required-asterisk">*</span>
+                    </label>
                     <input type="date"
                            class="form-control @error('fecha_fin') is-invalid @enderror"
                            id="fecha_fin"
@@ -51,7 +57,10 @@
 
                 {{-- Tipo Jornada --}}
                 <div class="mb-3">
-                    <label for="tipo_jornada" class="form-label">Tipo de jornada</label>
+                    <label for="tipo_jornada" class="form-label">
+                        Tipo de jornada
+                        <span class="required-asterisk">*</span>
+                    </label>
                     <select class="form-select @error('tipo_jornada') is-invalid @enderror"
                             id="tipo_jornada"
                             name="tipo_jornada"
@@ -67,11 +76,15 @@
 
                 {{-- Motivo --}}
                 <div class="mb-3">
-                    <label for="motivo" class="form-label">Motivo</label>
+                    <label for="motivo" class="form-label">
+                        Motivo
+                        <span class="required-asterisk">*</span>
+                    </label>
                     <textarea class="form-control @error('motivo') is-invalid @enderror"
                               id="motivo"
                               name="motivo"
                               rows="4"
+                              placeholder="Describa el motivo del permiso"
                               required>{{ old('motivo', $isEdit ? $permiso->motivo : '') }}</textarea>
                     @error('motivo')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -81,7 +94,8 @@
                 <hr>
                 <div class="d-flex justify-content-end gap-2">
                     <a href="{{ route('permisos.index') }}" class="btn btn-outline-secondary">Cancelar</a>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary btn-loading-submit">
+                        <i class="bi bi-check-lg me-1"></i>
                         {{ $isEdit ? 'Actualizar Permiso' : 'Solicitar Permiso' }}
                     </button>
                 </div>

@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('content')
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center sgd-page-header">
         <h1 class="h3">Detalle del Memo/Oficio</h1>
         <a href="{{ route('memos.index') }}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i> Volver
@@ -18,25 +18,25 @@
             @endif
         </div>
         <div class="card-body">
-            <div class="row mb-3">
-                <div class="col-sm-3 text-muted">Fecha</div>
-                <div class="col-sm-9">{{ $memo->fecha->format('d/m/Y') }}</div>
+            <div class="detail-row">
+                <div class="detail-label">Fecha</div>
+                <div class="detail-value">{{ $memo->fecha->format('d/m/Y') }}</div>
             </div>
 
-            <div class="row mb-3">
-                <div class="col-sm-3 text-muted">Destinatario</div>
-                <div class="col-sm-9">{{ $memo->destinatario }}</div>
+            <div class="detail-row">
+                <div class="detail-label">Destinatario</div>
+                <div class="detail-value">{{ $memo->destinatario }}</div>
             </div>
 
-            <div class="row mb-3">
-                <div class="col-sm-3 text-muted">Asunto</div>
-                <div class="col-sm-9">{{ $memo->asunto }}</div>
+            <div class="detail-row">
+                <div class="detail-label">Asunto</div>
+                <div class="detail-value">{{ $memo->asunto }}</div>
             </div>
 
             @if ($memo->archivo)
-                <div class="row mb-3">
-                    <div class="col-sm-3 text-muted">Archivo</div>
-                    <div class="col-sm-9">
+                <div class="detail-row">
+                    <div class="detail-label">Archivo</div>
+                    <div class="detail-value">
                         <a href="{{ route('memos.download', $memo->id) }}" class="btn btn-sm btn-primary">
                             <i class="bi bi-download me-1"></i> Descargar archivo
                         </a>
@@ -46,20 +46,20 @@
 
             <hr>
 
-            <div class="row mb-3">
-                <div class="col-sm-3 text-muted">Creado por</div>
-                <div class="col-sm-9">{{ $memo->user->name ?? '—' }}</div>
+            <div class="detail-row">
+                <div class="detail-label">Creado por</div>
+                <div class="detail-value">{{ $memo->user->name ?? '—' }}</div>
             </div>
 
-            <div class="row mb-3">
-                <div class="col-sm-3 text-muted">Creado el</div>
-                <div class="col-sm-9">{{ $memo->created_at->format('d/m/Y H:i') }}</div>
+            <div class="detail-row">
+                <div class="detail-label">Creado el</div>
+                <div class="detail-value">{{ $memo->created_at->format('d/m/Y H:i') }}</div>
             </div>
 
             @if ($memo->updated_at && $memo->updated_at != $memo->created_at)
-                <div class="row mb-3">
-                    <div class="col-sm-3 text-muted">Actualizado el</div>
-                    <div class="col-sm-9">{{ $memo->updated_at->format('d/m/Y H:i') }}</div>
+                <div class="detail-row">
+                    <div class="detail-label">Actualizado el</div>
+                    <div class="detail-value">{{ $memo->updated_at->format('d/m/Y H:i') }}</div>
                 </div>
             @endif
         </div>
@@ -70,11 +70,16 @@
                 </a>
                 <form action="{{ route('memos.destroy', $memo->id) }}"
                       method="POST"
-                      class="d-inline"
-                      onsubmit="return confirm('¿Está seguro de eliminar este memo/oficio?');">
+                      class="d-inline">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="btn btn-outline-danger">
+                    <button type="button"
+                            class="btn btn-outline-danger"
+                            data-confirm-modal
+                            data-confirm-message="¿Está seguro de eliminar el memo/oficio «{{ $memo->folio }}»? Esta acción no se puede deshacer."
+                            data-confirm-btn="Eliminar"
+                            data-confirm-icon="bi-trash"
+                            data-confirm-btn-class="btn-danger">
                         <i class="bi bi-trash me-1"></i> Eliminar
                     </button>
                 </form>

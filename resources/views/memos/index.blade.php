@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('content')
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center sgd-page-header">
         <h1 class="h3">Memos y Oficios</h1>
         <a href="{{ route('memos.create') }}" class="btn btn-primary">
             <i class="bi bi-plus-lg me-1"></i> Nuevo Memo/Oficio
@@ -9,7 +9,7 @@
     </div>
 
     {{-- Filters --}}
-    <div class="card shadow-sm mb-3">
+    <div class="card filter-card mb-3">
         <div class="card-body">
             <form method="GET" action="{{ route('memos.index') }}" class="row g-3">
                 <div class="col-md-4">
@@ -43,7 +43,7 @@
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
-                    <thead class="table-light">
+                    <thead>
                         <tr>
                             <th>Folio</th>
                             <th>Tipo</th>
@@ -96,11 +96,17 @@
                                     </a>
                                     <form action="{{ route('memos.destroy', $memo->id) }}"
                                           method="POST"
-                                          class="d-inline"
-                                          onsubmit="return confirm('¿Está seguro de eliminar este memo/oficio?');">
+                                          class="d-inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-danger me-1" title="Eliminar">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger me-1"
+                                                title="Eliminar"
+                                                data-confirm-modal
+                                                data-confirm-message="¿Está seguro de eliminar el memo/oficio «{{ $memo->folio }}»? Esta acción no se puede deshacer."
+                                                data-confirm-btn="Eliminar"
+                                                data-confirm-icon="bi-trash"
+                                                data-confirm-btn-class="btn-danger">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>

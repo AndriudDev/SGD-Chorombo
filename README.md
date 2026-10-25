@@ -27,11 +27,11 @@ El sistema gestiona 5 perfiles con permisos estrictos mediante middlewares y pol
 La Fase 1 está implementada, migrada y verificada:
 
 - **HU-01 (Gestión de Perfiles y Usuarios):** Panel exclusivo del Administrador para crear, editar y asignar usuarios a los 5 roles obligatorios mediante Middleware `CheckRole` en Laravel.
-- **Autenticación:** Login/Registro con Bootstrap 5, sesiones, protección CSRF.
+- **Autenticación:** Login con Bootstrap 5, sesiones, protección CSRF. La creación de usuarios es exclusiva del rol Administración (`/admin/users`), que asigna el rol del nuevo usuario; no hay registro público.
 - **RBAC funcional:** Middleware `role:administracion` bloquea acceso a usuarios sin el rol adecuado (verificado: usuario Secretaria recibe 403 en `/admin/users`).
 
 **Funciona hoy:**
-- Login y registro de usuarios
+- Login de usuarios (cuentas creadas solo por Administración, sin registro público)
 - Panel de administración de usuarios con CRUD completo
 - Asignación de roles mediante checkboxes
 - Middleware `CheckRole` protege todas las rutas administrativas
@@ -134,6 +134,8 @@ docker compose up -d          # Iniciar
 docker compose down           # Detener
 docker compose logs -f        # Ver logs en vivo
 docker compose ps             # Estado de servicios
+docker compose restart        # Reiniciar
+docker compose down && docker compose up -d # Reiniciar
 ```
 
 ### Laravel (dentro del contenedor)
@@ -173,8 +175,6 @@ docker compose exec -T mysql mysql -usail -ppassword sgd_chorombo -e "SELECT * F
 |---|---|---|
 | GET | `/login` | Público (guest) |
 | POST | `/login` | Público (guest) |
-| GET | `/register` | Público (guest) |
-| POST | `/register` | Público (guest) |
 | POST | `/logout` | Autenticado |
 | GET | `/admin` | Admin |
 | GET | `/admin/users` | Admin |
