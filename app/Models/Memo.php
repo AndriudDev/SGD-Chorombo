@@ -9,6 +9,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['folio', 'tipo', 'fecha', 'destinatario', 'asunto', 'archivo', 'user_id'])]
 class Memo extends Model
 {
+    protected function casts(): array
+    {
+        return [
+            'fecha' => 'date',
+        ];
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -37,8 +44,8 @@ class Memo extends Model
     {
         return self::where(function ($q) {
             $q->where('folio', 'LIKE', "%{$query}%")
-              ->orWhere('destinatario', 'LIKE', "%{$query}%")
-              ->orWhere('asunto', 'LIKE', "%{$query}%");
+                ->orWhere('destinatario', 'LIKE', "%{$query}%")
+                ->orWhere('asunto', 'LIKE', "%{$query}%");
         });
     }
 
@@ -51,6 +58,7 @@ class Memo extends Model
         if ($excludeId) {
             $q->where('id', '!=', $excludeId);
         }
-        return !$q->exists();
+
+        return ! $q->exists();
     }
 }

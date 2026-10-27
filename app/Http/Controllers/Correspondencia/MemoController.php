@@ -8,8 +8,10 @@ use App\Http\Requests\Correspondencia\UpdateMemoRequest;
 use App\Models\Memo;
 use App\Services\CorrespondenciaService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MemoController extends Controller
 {
@@ -52,19 +54,19 @@ class MemoController extends Controller
         // Validate folio uniqueness
         $errors = $this->correspondenciaService->validarFolioUnico(
             $request->folio,
-            $request->fecha?->year(),
+            $request->date('fecha')?->year,
         );
         if ($errors) {
             return back()->withErrors($errors);
         }
 
         $memo = Memo::create([
-            'folio'        => $request->folio,
-            'tipo'         => $request->tipo,
-            'fecha'        => $request->fecha,
+            'folio' => $request->folio,
+            'tipo' => $request->tipo,
+            'fecha' => $request->fecha,
             'destinatario' => $request->destinatario,
-            'asunto'       => $request->asunto,
-            'user_id'      => auth()->id(),
+            'asunto' => $request->asunto,
+            'user_id' => auth()->id(),
         ]);
 
         if ($request->hasFile('archivo')) {
@@ -82,14 +84,20 @@ class MemoController extends Controller
     public function show(Memo $memo): View
     {
         $memo->load('user');
+
         return view('memos.show', compact('memo'));
     }
 
     /**
      * Show edit form.
      */
-    public function edit(Memo $memo): View
+    public function edit(Memo $memo): RedirectResponse|View
     {
+        $user = Auth::user();
+        if (! $user->hasAnyRole(['administracion']) && $memo->user_id !== $user->id) {
+            return back()->with('error', 'No tienes permiso para editar este memo.');
+        }
+
         return view('memos.form', compact('memo'));
     }
 
@@ -98,10 +106,15 @@ class MemoController extends Controller
      */
     public function update(UpdateMemoRequest $request, Memo $memo): RedirectResponse
     {
+        $user = Auth::user();
+        if (! $user->hasAnyRole(['administracion']) && $memo->user_id !== $user->id) {
+            abort(403, 'No tienes permiso para modificar este memo.');
+        }
+
         // Validate folio uniqueness excluding current memo
         $errors = $this->correspondenciaService->validarFolioUnico(
             $request->folio,
-            $request->fecha?->year(),
+            $request->date('fecha')?->year,
             $memo->id,
         );
         if ($errors) {
@@ -109,11 +122,11 @@ class MemoController extends Controller
         }
 
         $memo->update([
-            'folio'        => $request->folio,
-            'tipo'         => $request->tipo,
-            'fecha'        => $request->fecha,
+            'folio' => $request->folio,
+            'tipo' => $request->tipo,
+            'fecha' => $request->fecha,
             'destinatario' => $request->destinatario,
-            'asunto'       => $request->asunto,
+            'asunto' => $request->asunto,
         ]);
 
         if ($request->hasFile('archivo')) {
@@ -132,6 +145,11 @@ class MemoController extends Controller
      */
     public function destroy(Memo $memo): RedirectResponse
     {
+        $user = Auth::user();
+        if (! $user->hasAnyRole(['administracion']) && $memo->user_id !== $user->id) {
+            abort(403, 'No tienes permiso para eliminar este memo.');
+        }
+
         $this->correspondenciaService->eliminarArchivo($memo);
         $memo->delete();
 
@@ -142,8 +160,8 @@ class MemoController extends Controller
     /**
      * Download the memo's file.
      */
-    public function download(Memo $memo): void
+    public function download(Memo $memo): StreamedResponse
     {
-        Storage::disk('public')->download($memo->archivo);
+        return Storage::disk('public')->download($memo->archivo);
     }
 }

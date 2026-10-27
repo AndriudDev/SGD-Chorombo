@@ -11,6 +11,7 @@ Antes de generar cualquier línea de código, debes consultar y respetar la info
 * `BRIEF.md`: Reglas del negocio, requerimientos funcionales, 5 roles RBAC y fases de desarrollo.
 * `ARCHITECTURE.md`: Estructura MVC en Laravel, controladores delgados, componentes y modelo de base de datos.
 * `STYLE.md`: Principios de UI/UX, convenciones de código (PSR-12, naming) y manejo de archivos.
+* `requerimientos.md`: Requerimientos del proyecto, criterios, epicas.
 
 ---
 

@@ -16,9 +16,9 @@ class CorrespondenciaService
     public function subirArchivo(UploadedFile $file, Memo $memo): string
     {
         $ext = $file->extension();
-        $filename = Str::slug("{$memo->folio}-{$memo->tipo}-{$memo->id}") . '.' . $ext;
-        $path = "memos/{$filename}";
-        Storage::disk('public')->put($path, $file->content());
+        $filename = Str::slug("{$memo->folio}-{$memo->tipo}-{$memo->id}").'.'.$ext;
+        $path = $file->storeAs('memos', $filename, 'public');
+
         return $path;
     }
 
@@ -38,16 +38,17 @@ class CorrespondenciaService
     public function validarFolioUnico(string $folio, ?int $year = null, ?int $excludeId = null): array
     {
         $year = $year ?? date('Y');
-        if (!Memo::folioUnicoEnAnio($folio, $year, $excludeId)) {
-            return ['error' => "El folio '{$folio}' ya existe en el año {$year}."];
+        if (! Memo::folioUnicoEnAnio($folio, $year, $excludeId)) {
+            return ['folio' => "El folio '{$folio}' ya existe en el año {$year}."];
         }
+
         return [];
     }
 
     /**
      * Calculate total accumulated days for a user in a year.
      */
-    public function calcularDiasAcumulados(int $userId, int $year): int
+    public function calcularDiasAcumulados(int $userId, int $year): float
     {
         return PermisoAdministrativo::contadorDiasAcumulados($userId, $year);
     }

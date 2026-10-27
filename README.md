@@ -42,9 +42,9 @@ La Fase 1 está implementada, migrada y verificada:
 
 | Fase | Objetivo |
 |---|---|
-| **Fase 2** | Núcleo de Archivos y Correspondencia — Memos, Oficios, Permisos Administrativos |
-| **Fase 3** | Módulos Especializados — Citaciones, Actas Confidenciales, Reuniones Comunales |
-| **Fase 4** | Trazabilidad, Búsqueda Avanzada y Auditoría |
+| **Fase 2** | Núcleo de Archivos y Correspondencia — Memos, Oficios, Permisos Administrativos | Épica 2
+| **Fase 3** | Módulos Especializados — Citaciones, Actas Confidenciales, Reuniones Comunales | Épica 3 y Épica 4
+| **Fase 4** | Trazabilidad, Búsqueda Avanzada y Auditoría | Épica 5
 
 El detalle funcional completo está en [`brief.md`](brief.md).
 
@@ -81,7 +81,6 @@ Las decisiones arquitectónicas se explican en [`ARCHITECTURE.md`](ARCHITECTURE.
 | Base de datos | MySQL 8.4 |
 | Frontend | Blade + Bootstrap 5 (CDN) |
 | Contenedores | Docker Compose (Sail) |
-| Correo (dev) | Mailpit |
 | Assets | Vite |
 
 ## Requisitos previos

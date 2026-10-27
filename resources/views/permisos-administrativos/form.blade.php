@@ -21,6 +21,31 @@
                     @method('PUT')
                 @endif
 
+                {{-- Funcionario — solo visible para Dirección y Administración --}}
+                @if ($users)
+                    <div class="mb-3">
+                        <label for="user_id" class="form-label">
+                            Funcionario solicitante
+                            <span class="required-asterisk">*</span>
+                        </label>
+                        <select class="form-select @error('user_id') is-invalid @enderror"
+                                id="user_id"
+                                name="user_id"
+                                required>
+                            <option value="">Seleccione un funcionario...</option>
+                            @foreach ($users as $u)
+                                <option value="{{ $u->id }}"
+                                    {{ old('user_id', $isEdit ? $permiso->user_id : '') == $u->id ? 'selected' : '' }}>
+                                    {{ $u->name }} ({{ $u->roles->first()->display_name ?? '—' }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('user_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                @endif
+
                 {{-- Fecha Inicio --}}
                 <div class="mb-3">
                     <label for="fecha_inicio" class="form-label">

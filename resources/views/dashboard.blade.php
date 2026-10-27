@@ -53,21 +53,23 @@
                     </div>
                 </div>
 
-                <div class="col-sm-6 col-lg-4 d-flex align-items-stretch">
-                    <div class="card sgd-module-card border-0 h-100">
-                        <div class="card-body d-flex flex-column align-items-center text-center py-5 px-4">
-                            <div class="sgd-module-icon mb-3">
-                                <i class="bi bi-calendar-check"></i>
+                @if (auth()->user()->hasAnyRole(['administracion', 'directora']))
+                    <div class="col-sm-6 col-lg-4 d-flex align-items-stretch">
+                        <div class="card sgd-module-card border-0 h-100">
+                            <div class="card-body d-flex flex-column align-items-center text-center py-5 px-4">
+                                <div class="sgd-module-icon mb-3">
+                                    <i class="bi bi-calendar-check"></i>
+                                </div>
+                                <h4 class="card-title fw-semibold mb-1">Permisos</h4>
+                                <p class="card-text text-muted small mb-4">Gestiona solicitudes y el historial de permisos.</p>
+                                <a href="{{ route('permisos.index') }}" class="btn sgd-btn-module mt-auto">
+                                    <i class="bi bi-arrow-right-circle me-1"></i>
+                                    Gestionar permisos
+                                </a>
                             </div>
-                            <h4 class="card-title fw-semibold mb-1">Permisos</h4>
-                            <p class="card-text text-muted small mb-4">Gestiona solicitudes y el historial de permisos.</p>
-                            <a href="{{ route('permisos.index') }}" class="btn sgd-btn-module mt-auto">
-                                <i class="bi bi-arrow-right-circle me-1"></i>
-                                Gestionar permisos
-                            </a>
                         </div>
                     </div>
-                </div>
+                @endif
 
             </div>
         </div>

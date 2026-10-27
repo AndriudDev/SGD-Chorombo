@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\RRHH\StorePermisoAdminRequest;
 use App\Http\Requests\RRHH\UpdatePermisoAdminRequest;
 use App\Models\PermisoAdministrativo;
+use App\Models\User;
 use App\Services\CorrespondenciaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -23,22 +24,32 @@ class PermisoAdminController extends Controller
     public function index(): View
     {
         $user = Auth::user();
-        $isAdmin = $user->hasAnyRole(['administracion', 'directora']);
         $year = request()->input('year', date('Y'));
 
         $query = PermisoAdministrativo::with('user', 'aprobador');
 
-        if (!$isAdmin) {
-            $query->byUser($user->id);
-        } elseif ($estado = request()->input('estado')) {
+        // Secretaría, UTP y Convivencia solo ven sus propios permisos
+        if (! $user->hasAnyRole(['directora', 'administracion'])) {
+            $query->where('user_id', $user->id);
+        }
+
+        if ($estado = request()->input('estado')) {
             $query->byEstado($estado);
         }
 
         $permisos = $query->orderBy('created_at', 'desc')->paginate(10);
         $diasAcumulados = $this->correspondenciaService->calcularDiasAcumulados($user->id, $year);
-        $showAprobar = $isAdmin;
 
-        return view('permisos-administrativos.index', compact('permisos', 'diasAcumulados', 'showAprobar'));
+        // Para supervisores: acumulado por funcionario visible en la tabla
+        $acumuladosPorUsuario = [];
+        if ($user->hasAnyRole(['directora', 'administracion'])) {
+            $userIds = collect($permisos->items())->pluck('user_id')->unique();
+            foreach ($userIds as $uid) {
+                $acumuladosPorUsuario[$uid] = $this->correspondenciaService->calcularDiasAcumulados($uid, $year);
+            }
+        }
+
+        return view('permisos-administrativos.index', compact('permisos', 'diasAcumulados', 'acumuladosPorUsuario'));
     }
 
     /**
@@ -46,7 +57,15 @@ class PermisoAdminController extends Controller
      */
     public function create(): View
     {
-        return view('permisos-administrativos.form', ['permiso' => null]);
+        $users = null;
+        if (Auth::user()->hasAnyRole(['directora', 'administracion'])) {
+            $users = User::with('roles')->orderBy('name')->get();
+        }
+
+        return view('permisos-administrativos.form', [
+            'permiso' => null,
+            'users' => $users,
+        ]);
     }
 
     /**
@@ -54,14 +73,21 @@ class PermisoAdminController extends Controller
      */
     public function store(StorePermisoAdminRequest $request): RedirectResponse
     {
+        $user = Auth::user();
+
+        // Admin/Directora pueden crear permisos para otro usuario
+        $userId = $user->hasAnyRole(['directora', 'administracion'])
+            ? $request->user_id
+            : $user->id;
+
         PermisoAdministrativo::create([
-            'user_id'       => auth()->id(),
-            'fecha_inicio'  => $request->fecha_inicio,
-            'fecha_fin'     => $request->fecha_fin,
-            'tipo_jornada'  => $request->tipo_jornada,
-            'motivo'        => $request->motivo,
-            'estado'        => 'pendiente',
-            'created_by'    => auth()->id(),
+            'user_id' => $userId,
+            'fecha_inicio' => $request->fecha_inicio,
+            'fecha_fin' => $request->fecha_fin,
+            'tipo_jornada' => $request->tipo_jornada,
+            'motivo' => $request->motivo,
+            'estado' => 'pendiente',
+            'created_by' => $user->id,
         ]);
 
         return redirect()->route('permisos.index')
@@ -73,7 +99,12 @@ class PermisoAdminController extends Controller
      */
     public function edit(PermisoAdministrativo $permiso): View
     {
-        return view('permisos-administrativos.form', compact('permiso'));
+        $users = null;
+        if (Auth::user()->hasAnyRole(['directora', 'administracion'])) {
+            $users = User::with('roles')->orderBy('name')->get();
+        }
+
+        return view('permisos-administrativos.form', compact('permiso', 'users'));
     }
 
     /**
@@ -87,10 +118,15 @@ class PermisoAdminController extends Controller
 
         $permiso->update([
             'fecha_inicio' => $request->fecha_inicio,
-            'fecha_fin'    => $request->fecha_fin,
+            'fecha_fin' => $request->fecha_fin,
             'tipo_jornada' => $request->tipo_jornada,
-            'motivo'       => $request->motivo,
+            'motivo' => $request->motivo,
         ]);
+
+        // Admin/Directora pueden cambiar el funcionario al editar
+        if (Auth::user()->hasAnyRole(['directora', 'administracion']) && $request->filled('user_id')) {
+            $permiso->update(['user_id' => $request->user_id]);
+        }
 
         return redirect()->route('permisos.index')
             ->with('success', 'Solicitud de permiso actualizada correctamente.');
@@ -116,12 +152,8 @@ class PermisoAdminController extends Controller
      */
     public function aprobar(PermisoAdministrativo $permiso): RedirectResponse
     {
-        if (!Auth::user()->hasAnyRole(['administracion', 'directora'])) {
-            return back()->with('error', 'No tienes permisos para aprobar permisos.');
-        }
-
         $permiso->update([
-            'estado'       => 'aprobado',
+            'estado' => 'aprobado',
             'aprobado_por' => auth()->id(),
         ]);
 
@@ -134,12 +166,8 @@ class PermisoAdminController extends Controller
      */
     public function rechazar(PermisoAdministrativo $permiso): RedirectResponse
     {
-        if (!Auth::user()->hasAnyRole(['administracion', 'directora'])) {
-            return back()->with('error', 'No tienes permisos para rechazar permisos.');
-        }
-
         $permiso->update([
-            'estado'       => 'rechazado',
+            'estado' => 'rechazado',
             'aprobado_por' => auth()->id(),
         ]);
 

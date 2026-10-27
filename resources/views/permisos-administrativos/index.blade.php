@@ -1,6 +1,12 @@
 @extends('layouts.admin')
 
 @section('content')
+    @php
+        $user = Auth::user();
+        $esSupervisor = $user->hasAnyRole(['directora', 'administracion']);
+        $formatearDias = fn (float $dias): string => rtrim(rtrim(number_format($dias, 1, ',', '.'), '0'), ',');
+    @endphp
+
     <div class="d-flex justify-content-between align-items-center sgd-page-header">
         <h1 class="h3">Permisos Administrativos</h1>
         <a href="{{ route('permisos.create') }}" class="btn btn-primary">
@@ -15,7 +21,7 @@
                 <i class="bi bi-calendar-week fs-3 me-3 text-primary"></i>
                 <div>
                     <strong>Días acumulados en el año:</strong>
-                    <span class="display-number ms-2">{{ $diasAcumulados }}</span>
+                    <span class="display-number ms-2">{{ $formatearDias($diasAcumulados) }}</span>
                 </div>
                 @if ($diasAcumulados >= 10)
                     <span class="badge bg-warning ms-3 fs-6">
@@ -38,6 +44,9 @@
                             <th>Fin</th>
                             <th>Jornada</th>
                             <th>Días</th>
+                            @if ($esSupervisor)
+                                <th>Acumulado año</th>
+                            @endif
                             <th>Estado</th>
                             <th class="text-end">Acciones</th>
                         </tr>
@@ -55,7 +64,10 @@
                                         <span class="badge bg-info rounded-pill">Media</span>
                                     @endif
                                 </td>
-                                <td>{{ $permiso->diasSolicitados() }}</td>
+                                <td>{{ $formatearDias($permiso->diasSolicitados()) }}</td>
+                                @if ($esSupervisor)
+                                    <td>{{ $formatearDias($acumuladosPorUsuario[$permiso->user_id] ?? 0) }}</td>
+                                @endif
                                 <td>
                                     @if ($permiso->estado === 'pendiente')
                                         <span class="badge bg-warning rounded-pill">Pendiente</span>
@@ -66,8 +78,8 @@
                                     @endif
                                 </td>
                                 <td class="text-end">
-                                    {{-- View/Edit/Delete si pendiente --}}
-                                    @if ($permiso->estado === 'pendiente')
+                                    {{-- Editar/Eliminar — solo Dirección y Administración --}}
+                                    @if ($permiso->estado === 'pendiente' && $esSupervisor)
                                         <a href="{{ route('permisos.edit', $permiso->id) }}"
                                            class="btn btn-sm btn-outline-secondary me-1"
                                            title="Editar">
@@ -91,8 +103,8 @@
                                         </form>
                                     @endif
 
-                                    {{-- Aprobar/Rechazar para admin/directora --}}
-                                    @if ($showAprobar && $permiso->estado === 'pendiente')
+                                    {{-- Aprobar/Rechazar — solo Dirección y Administración --}}
+                                    @if ($permiso->estado === 'pendiente' && $esSupervisor)
                                         <form action="{{ route('permisos.aprobar', $permiso->id) }}"
                                               method="POST"
                                               class="d-inline me-1">
@@ -128,7 +140,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted py-4">
+                                <td colspan="{{ $esSupervisor ? 8 : 7 }}" class="text-center text-muted py-4">
                                     No hay solicitudes de permiso registradas.
                                 </td>
                             </tr>

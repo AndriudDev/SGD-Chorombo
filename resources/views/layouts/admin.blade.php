@@ -40,13 +40,19 @@
                         Memos y Oficios
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a href="{{ route('permisos.index') }}"
-                       class="nav-link {{ request()->routeIs('permisos.*') ? 'active' : '' }}">
-                        <i class="bi bi-calendar-check"></i>
-                        Permisos Administrativos
-                    </a>
-                </li>
+                @if (auth()->user()->hasAnyRole(['administracion', 'directora', 'secretaria', 'utp', 'convivencia']))
+                    <li class="nav-item">
+                        <a href="{{ route('permisos.index') }}"
+                           class="nav-link {{ request()->routeIs('permisos.*') ? 'active' : '' }}">
+                            <i class="bi bi-calendar-check"></i>
+                            Permisos Administrativos
+                            @if (auth()->user()->hasAnyRole(['administracion', 'directora'])
+                                && ($pendientes = \App\Models\PermisoAdministrativo::pendientes()->count()) > 0)
+                                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill ms-auto">{{ $pendientes }}</span>
+                            @endif
+                        </a>
+                    </li>
+                @endif
             </ul>
             <hr>
             <div class="dropdown">
@@ -93,6 +99,13 @@
                 @if (session('success'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         {{ session('success') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                @endif
+
+                @if (session('error'))
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        {{ session('error') }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 @endif

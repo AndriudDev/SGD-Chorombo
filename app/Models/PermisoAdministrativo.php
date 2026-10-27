@@ -11,6 +11,14 @@ class PermisoAdministrativo extends Model
 {
     protected $table = 'permisos_administrativos';
 
+    protected function casts(): array
+    {
+        return [
+            'fecha_inicio' => 'date',
+            'fecha_fin' => 'date',
+        ];
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -27,17 +35,20 @@ class PermisoAdministrativo extends Model
     }
 
     /**
-     * Calculate number of days requested.
+     * Calculate number of days requested (inclusive).
+     * A media jornada counts as half a day per date.
      */
-    public function diasSolicitados(): int
+    public function diasSolicitados(): float
     {
-        return $this->fecha_fin->diff($this->fecha_inicio)->days() + 1;
+        $days = $this->fecha_inicio->diffInDays($this->fecha_fin) + 1;
+
+        return $this->tipo_jornada === 'media' ? $days * 0.5 : (float) $days;
     }
 
     /**
      * Count total approved days for a user in a given year.
      */
-    public static function contadorDiasAcumulados(int $userId, int $year): int
+    public static function contadorDiasAcumulados(int $userId, int $year): float
     {
         return self::where('user_id', $userId)
             ->where('estado', 'aprobado')
@@ -52,14 +63,6 @@ class PermisoAdministrativo extends Model
     public static function pendientes()
     {
         return self::where('estado', 'pendiente');
-    }
-
-    /**
-     * Scope: filter by user.
-     */
-    public static function byUser(int $userId)
-    {
-        return self::where('user_id', $userId);
     }
 
     /**

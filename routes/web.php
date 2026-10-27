@@ -41,11 +41,15 @@ Route::middleware('auth')->prefix('correspondencia')->group(function () {
     Route::get('memos/{memo}/download', [MemoController::class, 'download'])->name('memos.download');
 });
 
-// Permisos Administrativos
-Route::middleware('auth')->group(function () {
+// Permisos Administrativos — todo el equipo directivo (HU-03)
+Route::middleware(['auth', 'role:administracion|directora|secretaria|utp|convivencia'])->group(function () {
     Route::get('permisos-administrativos', [PermisoAdminController::class, 'index'])->name('permisos.index');
     Route::get('permisos-administrativos/create', [PermisoAdminController::class, 'create'])->name('permisos.create');
     Route::post('permisos-administrativos', [PermisoAdminController::class, 'store'])->name('permisos.store');
+});
+
+// Editar/Eliminar + Aprobar/Rechazar — solo Dirección y Administración
+Route::middleware(['auth', 'role:administracion|directora'])->group(function () {
     Route::get('permisos-administrativos/{permiso}/edit', [PermisoAdminController::class, 'edit'])->name('permisos.edit');
     Route::put('permisos-administrativos/{permiso}', [PermisoAdminController::class, 'update'])->name('permisos.update');
     Route::delete('permisos-administrativos/{permiso}', [PermisoAdminController::class, 'destroy'])->name('permisos.destroy');
