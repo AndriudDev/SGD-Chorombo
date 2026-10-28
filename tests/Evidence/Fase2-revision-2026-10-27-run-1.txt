@@ -1,0 +1,347 @@
+SGD-Chorombo - Revalidación QA Fase 2 - ejecución 1
+Inicio UTC: 2026-10-27T20:58:45.069Z
+Fin UTC: 2026-10-27T21:03:38.572Z
+Rama: qa/fase2-revision-20261027
+Commit: 34b6b8e44ec69917fb4cc965d00bfd8d9f2bd0f0
+Prueba ejecutada: tests/Feature/Fase2RevalidacionQaTest.php
+Casos complementarios de tests/Feature/Fase2QaTest.php: NO ejecutados
+
+===== VERIFICACIÓN DE AISLAMIENTO PREVIA =====
+APP_ENV: testing
+Base configurada: testing
+SELECT DATABASE(): testing
+Resultado observado: {"app_env":"testing","configured_database":"testing","selected_database":"testing"}
+La prueba conserva beforeRefreshingDatabase() con las mismas tres comprobaciones.
+
+===== CONFIGURACIÓN TEMPORAL SIN SECRETOS =====
+Archivo temporal: phpunit.fase2-revalidation.tmp.xml
+Única diferencia respecto de phpunit.xml: DB_HOST=127.0.0.1 -> DB_HOST=mysql
+
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <server name="APP_ENV" value="testing" force="true"/>
+        <server name="APP_MAINTENANCE_DRIVER" value="file" force="true"/>
+        <server name="BCRYPT_ROUNDS" value="4" force="true"/>
+        <server name="BROADCAST_CONNECTION" value="null" force="true"/>
+        <server name="CACHE_STORE" value="array" force="true"/>
+        <server name="DB_CONNECTION" value="mysql" force="true"/>
+        <server name="DB_HOST" value="mysql" force="true"/>
+        <server name="DB_PORT" value="3306" force="true"/>
+        <server name="DB_DATABASE" value="testing" force="true"/>
+        <server name="DB_URL" value=""/>
+        <server name="MAIL_MAILER" value="array" force="true"/>
+        <server name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <server name="SESSION_DRIVER" value="array" force="true"/>
+        <server name="PULSE_ENABLED" value="false" force="true"/>
+        <server name="TELESCOPE_ENABLED" value="false" force="true"/>
+        <server name="NIGHTWATCH_ENABLED" value="false" force="true"/>
+    </php>
+</phpunit>
+
+===== COMANDO =====
+docker compose exec -T -e APP_ENV=testing -e DB_DATABASE=testing -e XDEBUG_MODE=off laravel.test php vendor/bin/phpunit --configuration phpunit.fase2-revalidation.tmp.xml --testdox --colors=never tests/Feature/Fase2RevalidacionQaTest.php
+
+Código de salida: 1
+
+===== STDOUT COMPLETO =====
+PHPUnit 12.5.40 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.5.12
+Configuration: /var/www/html/phpunit.fase2-revalidation.tmp.xml
+
+...F..                                                              6 / 6 (100%)
+
+Time: 01:58.522, Memory: 58.50 MB
+
+Fase2Revalidacion Qa (Tests\Feature\Fase2RevalidacionQa)
+ ✔ Hu02 01 secretaria registra memo valido con pdf
+ ✔ Hu02 02 lista un memo existente sin error
+ ✔ Hu03 01 registra permiso de dia completo como pendiente
+ ✘ Hu03 02 lista solo solicitudes propias del funcionario
+   │
+   │ Failed asserting that '<!DOCTYPE html>\n
+   │ <html lang="es">\n
+   │ <head>\n
+   │     <meta charset="UTF-8">\n
+   │     <meta name="viewport" content="width=device-width, initial-scale=1.0">\n
+   │     <meta name="csrf-token" content="1dnpA6j7FT06z89PrkNdOoFaghJRUh5ukJOvazcZ">\n
+   │     <title>Laravel - Administración</title>\n
+   │     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">\n
+   │     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">\n
+   │     <link href="/css/app.css" rel="stylesheet">\n
+   │     </head>\n
+   │ <body>\n
+   │     \n
+   │     <div class="sgd-toast-container" id="sgd-toast-container" aria-live="polite"></div>\n
+   │ \n
+   │     <div class="d-flex" style="min-height: 100vh;">\n
+   │         \n
+   │         <nav class="d-flex flex-column flex-shrink-0 p-3 sgd-sidebar">\n
+   │             <a href="http://localhost:8000/dashboard"\n
+   │                class="d-flex align-items-center mb-3 text-decoration-none sidebar-brand">\n
+   │                 <i class="bi bi-shield-fill-check me-2"></i>\n
+   │                 Laravel\n
+   │             </a>\n
+   │             <hr>\n
+   │             <ul class="nav nav-pills flex-column mb-auto">\n
+   │                                 <li class="nav-item">\n
+   │                     <a href="http://localhost:8000/correspondencia/memos"\n
+   │                        class="nav-link ">\n
+   │                         <i class="bi bi-file-text"></i>\n
+   │                         Memos y Oficios\n
+   │                     </a>\n
+   │                 </li>\n
+   │                                     <li class="nav-item">\n
+   │                         <a href="http://localhost:8000/permisos-administrativos"\n
+   │                            class="nav-link active">\n
+   │                             <i class="bi bi-calendar-check"></i>\n
+   │                             Permisos Administrativos\n
+   │                                                     </a>\n
+   │                     </li>\n
+   │                             </ul>\n
+   │             <hr>\n
+   │             <div class="dropdown">\n
+   │                 <a href="#"\n
+   │                    class="d-flex align-items-center text-white text-decoration-none dropdown-toggle sidebar-user"\n
+   │                    data-bs-toggle="dropdown">\n
+   │                     <i class="bi bi-person-circle me-2"></i>\n
+   │                     <strong>Mozelle Hermann</strong>\n
+   │                 </a>\n
+   │                 <ul class="dropdown-menu dropdown-menu-dark text-small shadow">\n
+   │                     <li>\n
+   │                         <form method="POST" action="http://localhost:8000/logout">\n
+   │                             <input type="hidden" name="_token" value="1dnpA6j7FT06z89PrkNdOoFaghJRUh5ukJOvazcZ" autocomplete="off">                            <button type="submit" class="dropdown-item">Cerrar sesión</button>\n
+   │                         </form>\n
+   │                     </li>\n
+   │                 </ul>\n
+   │             </div>\n
+   │         </nav>\n
+   │ \n
+   │         \n
+   │         <div class="d-flex flex-column flex-grow-1">\n
+   │             \n
+   │             <nav class="navbar navbar-expand navbar-light sgd-topbar px-4">\n
+   │                 <div class="container-fluid">\n
+   │                     <span class="navbar-brand mb-0 h6">\n
+   │                         Secretaría\n
+   │                     </span>\n
+   │                     <ul class="navbar-nav ms-auto">\n
+   │                         <li class="nav-item">\n
+   │                             <form method="POST" action="http://localhost:8000/logout">\n
+   │                                 <input type="hidden" name="_token" value="1dnpA6j7FT06z89PrkNdOoFaghJRUh5ukJOvazcZ" autocomplete="off">                                <button type="submit" class="btn btn-outline-secondary btn-sm">\n
+   │                                     <i class="bi bi-box-arrow-right me-1"></i> Cerrar sesión\n
+   │                                 </button>\n
+   │                             </form>\n
+   │                         </li>\n
+   │                     </ul>\n
+   │                 </div>\n
+   │             </nav>\n
+   │ \n
+   │             \n
+   │             <main class="flex-grow-1 p-4 sgd-main">\n
+   │                 \n
+   │                 \n
+   │                     \n
+   │     <div class="d-flex justify-content-between align-items-center sgd-page-header">\n
+   │         <h1 class="h3">Permisos Administrativos</h1>\n
+   │         <a href="http://localhost:8000/permisos-administrativos/create" class="btn btn-primary">\n
+   │             <i class="bi bi-plus-lg me-1"></i> Solicitar Permiso\n
+   │         </a>\n
+   │     </div>\n
+   │ \n
+   │     \n
+   │     <div class="card shadow-sm mb-3 dias-acumulados">\n
+   │         <div class="card-body">\n
+   │             <div class="d-flex align-items-center">\n
+   │                 <i class="bi bi-calendar-week fs-3 me-3 text-primary"></i>\n
+   │                 <div>\n
+   │                     <strong>Días acumulados en el año:</strong>\n
+   │                     <span class="display-number ms-2">0</span>\n
+   │                 </div>\n
+   │                             </div>\n
+   │         </div>\n
+   │     </div>\n
+   │ \n
+   │     \n
+   │     <div class="card shadow-sm">\n
+   │         <div class="card-body p-0">\n
+   │             <div class="table-responsive">\n
+   │                 <table class="table table-hover mb-0">\n
+   │                     <thead>\n
+   │                         <tr>\n
+   │                             <th>Funcionario</th>\n
+   │                             <th>Inicio</th>\n
+   │                             <th>Fin</th>\n
+   │                             <th>Jornada</th>\n
+   │                             <th>Días</th>\n
+   │                                                         <th>Estado</th>\n
+   │                             <th class="text-end">Acciones</th>\n
+   │                         </tr>\n
+   │                     </thead>\n
+   │                     <tbody>\n
+   │                                                     <tr>\n
+   │                                 <td class="fw-medium">Mozelle Hermann</td>\n
+   │                                 <td>26/10/2026</td>\n
+   │                                 <td>26/10/2026</td>\n
+   │                                 <td>\n
+   │                                                                             <span class="badge bg-primary rounded-pill">Completa</span>\n
+   │                                                                     </td>\n
+   │                                 <td>1</td>\n
+   │                                                                 <td>\n
+   │                                                                             <span class="badge bg-warning rounded-pill">Pendiente</span>\n
+   │                                                                     </td>\n
+   │                                 <td class="text-end">\n
+   │                                     \n
+   │                                     \n
+   │                                     \n
+   │                                                                     </td>\n
+   │                             </tr>\n
+   │                                             </tbody>\n
+   │                 </table>\n
+   │             </div>\n
+   │         </div>\n
+   │             </div>\n
+   │             </main>\n
+   │         </div>\n
+   │     </div>\n
+   │ \n
+   │     \n
+   │     <div class="modal fade sgd-confirm-modal" id="sgd-confirm-modal" tabindex="-1"\n
+   │          aria-labelledby="sgd-confirm-title" aria-hidden="true">\n
+   │         <div class="modal-dialog modal-dialog-centered">\n
+   │             <div class="modal-content">\n
+   │                 <div class="modal-header">\n
+   │                     <h5 class="modal-title" id="sgd-confirm-title">\n
+   │                         <i class="bi bi-exclamation-triangle me-1"></i>\n
+   │                         Confirmar acción\n
+   │                     </h5>\n
+   │                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>\n
+   │                 </div>\n
+   │                 <div class="modal-body" id="sgd-confirm-body">\n
+   │                     ¿Está seguro de realizar esta acción?\n
+   │                 </div>\n
+   │                 <div class="modal-footer d-flex justify-content-end gap-2">\n
+   │                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">\n
+   │                         Cancelar\n
+   │                     </button>\n
+   │                     <button type="button" class="btn btn-danger" id="sgd-confirm-btn">\n
+   │                         <i class="bi bi-trash me-1"></i> Eliminar\n
+   │                     </button>\n
+   │                 </div>\n
+   │             </div>\n
+   │         </div>\n
+   │     </div>\n
+   │ \n
+   │     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>\n
+   │     <script>\n
+   │         // ── Confirmación modal ──\n
+   │         (function() {\n
+   │             const modalEl = document.getElementById('sgd-confirm-modal');\n
+   │             if (!modalEl) return;\n
+   │             const modal = new bootstrap.Modal(modalEl);\n
+   │             const confirmBtn = document.getElementById('sgd-confirm-btn');\n
+   │             let pendingForm = null;\n
+   │ \n
+   │             document.querySelectorAll('[data-confirm-modal]').forEach(function(trigger) {\n
+   │                 trigger.addEventListener('click', function(e) {\n
+   │                     e.preventDefault();\n
+   │                     pendingForm = trigger.closest('form') || trigger.dataset.formAction;\n
+   │                     const msg = trigger.dataset.confirmMessage || '¿Está seguro de realizar esta acción?';\n
+   │                     const btnText = trigger.dataset.confirmBtn || 'Eliminar';\n
+   │                     const icon = trigger.dataset.confirmIcon || 'bi-trash';\n
+   │ \n
+   │                     document.getElementById('sgd-confirm-body').textContent = msg;\n
+   │                     confirmBtn.innerHTML = '<i class="bi ' + icon + ' me-1"></i> ' + btnText;\n
+   │ \n
+   │                     // Color del botón según data\n
+   │                     const btnClass = trigger.dataset.confirmBtnClass || 'btn-danger';\n
+   │                     confirmBtn.className = 'btn ' + btnClass;\n
+   │ \n
+   │                     modal.show();\n
+   │                 });\n
+   │             });\n
+   │ \n
+   │             confirmBtn.addEventListener('click', function() {\n
+   │                 if (pendingForm && pendingForm.submit) {\n
+   │                     pendingForm.submit();\n
+   │                 } else if (typeof pendingForm === 'string') {\n
+   │                     // Si es una URL, redirigir (para enlaces)\n
+   │                     window.location.href = pendingForm;\n
+   │                 }\n
+   │                 modal.hide();\n
+   │             });\n
+   │ \n
+   │             // Limpiar al cerrar\n
+   │             modalEl.addEventListener('hidden.bs.modal', function() {\n
+   │                 pendingForm = null;\n
+   │             });\n
+   │         })();\n
+   │ \n
+   │         // ── Loading state en formularios ──\n
+   │         (function() {\n
+   │             document.querySelectorAll('form').forEach(function(form) {\n
+   │                 form.addEventListener('submit', function() {\n
+   │                     // Pequeño retraso para que el navegador envíe el formulario\n
+   │                     const submitBtn = form.querySelector('[type="submit"]');\n
+   │                     if (submitBtn && !submitBtn.disabled) {\n
+   │                         submitBtn.classList.add('btn-loading');\n
+   │                         submitBtn.disabled = true;\n
+   │                     }\n
+   │                 });\n
+   │             });\n
+   │         })();\n
+   │ \n
+   │         // ── Toast helper ──\n
+   │         function sgdToast(message, type) {\n
+   │             type = type || 'success';\n
+   │             var container = document.getElementById('sgd-toast-container');\n
+   │             if (!container) return;\n
+   │             var icons = { success: 'bi-check-circle-fill', danger: 'bi-x-circle-fill', warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill' };\n
+   │             var icon = icons[type] || icons.info;\n
+   │             var id = 't-' + Date.now();\n
+   │             var html = '<div id="' + id + '" class="toast align-items-center text-bg-' + type + ' border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">'\n
+   │                 + '<div class="d-flex">'\n
+   │                 + '<div class="toast-body"><i class="bi ' + icon + ' me-2"></i>' + message + '</div>'\n
+   │                 + '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>'\n
+   │                 + '</div></div>';\n
+   │             container.insertAdjacentHTML('beforeend', html);\n
+   │             var el = document.getElementById(id);\n
+   │             if (el && bootstrap.Toast) {\n
+   │                 var t = new bootstrap.Toast(el);\n
+   │                 t.show();\n
+   │             }\n
+   │         }\n
+   │     </script>\n
+   │     </body>\n
+   │ </html>' [UTF-8](length: 11737) contains "Solicitud propia QA" [ASCII](length: 19).
+   │
+   │ /var/www/html/vendor/laravel/framework/src/Illuminate/Testing/TestResponseAssert.php:46
+   │ /var/www/html/vendor/laravel/framework/src/Illuminate/Testing/TestResponse.php:720
+   │ /var/www/html/tests/Feature/Fase2RevalidacionQaTest.php:107
+   │
+ ✔ Hu03 03 media jornada aprobada aporta medio dia
+ ✔ Hu03 04 funcionario no puede editar solicitud ajena por url
+
+FAILURES!
+Tests: 6, Assertions: 34, Failures: 1.
+
+===== STDERR COMPLETO =====
+
