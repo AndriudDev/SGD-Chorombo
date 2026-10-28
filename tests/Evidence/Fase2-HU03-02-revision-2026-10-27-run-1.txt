@@ -1,0 +1,132 @@
+SGD-Chorombo - Revalidación focalizada HU03-02 - ejecución 1
+Inicio UTC: 2026-10-27T21:13:28.629Z
+Fin UTC: 2026-10-27T21:15:46.869Z
+Rama: qa/fase2-revision-20261027
+Commit base: 34b6b8e44ec69917fb4cc965d00bfd8d9f2bd0f0
+Prueba ejecutada: tests/Feature/Fase2RevalidacionQaTest.php
+Filtro ejecutado: test_hu03_02_lista_solo_solicitudes_propias_del_funcionario
+Otros cinco casos originales: NO ejecutados
+Casos complementarios de tests/Feature/Fase2QaTest.php: NO ejecutados
+
+===== RESPALDO PREVIO =====
+Carpeta: C:/Users/pauli/SGD-Chorombo-QA-HU03-02-Backup-20261027
+SHA-256 prueba previa: dac3f0371d670d1dcbf7e7882024a0ce1d0501db542f7e999d3f5d1c1f0b9a5d
+SHA-256 evidencia previa: 2b46556377950ba54475f8b83e80cd7e69c8094be3b9da15d58d558ec307d1aa
+
+===== JUSTIFICACIÓN =====
+La tabla de permisos no renderiza el campo motivo. Renderiza funcionario, fechas, jornada, días y estado.
+La comprobación se ajustó para inspeccionar los IDs de la colección paginada entregada a la vista:
+- contiene el ID de la solicitud propia;
+- no contiene el ID de la solicitud ajena.
+La representación HTML se comprueba con nombres y fechas distintivos que la vista sí renderiza.
+Se conservaron HTTP 200, ambos registros, rol Secretaría y beforeRefreshingDatabase().
+
+===== CAMBIO EXACTO =====
+diff --git a/C:/Users/pauli/SGD-Chorombo-QA-HU03-02-Backup-20261027/tests/Feature/Fase2RevalidacionQaTest.php b/tests/Feature/Fase2RevalidacionQaTest.php
+index cc50812..0a312d2 100644
+--- a/C:/Users/pauli/SGD-Chorombo-QA-HU03-02-Backup-20261027/tests/Feature/Fase2RevalidacionQaTest.php
++++ b/tests/Feature/Fase2RevalidacionQaTest.php
+@@ -96,16 +96,28 @@ public function test_hu03_01_registra_permiso_de_dia_completo_como_pendiente():
+     public function test_hu03_02_lista_solo_solicitudes_propias_del_funcionario(): void
+     {
+         $funcionario = $this->userWithRole('secretaria', 'Secretaría');
+-        $otroFuncionario = User::factory()->create();
++        $funcionario->update(['name' => 'Funcionaria Propia QA']);
++        $otroFuncionario = User::factory()->create(['name' => 'Funcionaria Ajena QA']);
+ 
+-        $this->createPermiso($funcionario, 'Solicitud propia QA');
+-        $this->createPermiso($otroFuncionario, 'Solicitud ajena QA');
++        $permisoPropio = $this->createPermiso($funcionario, 'Solicitud propia QA');
++        $permisoAjeno = $this->createPermiso($otroFuncionario, 'Solicitud ajena QA', [
++            'fecha_inicio' => '2026-11-03',
++            'fecha_fin' => '2026-11-03',
++            'tipo_jornada' => 'media',
++        ]);
+ 
+         $response = $this->actingAs($funcionario)->get(route('permisos.index'));
+ 
+         $response->assertOk();
+-        $response->assertSee('Solicitud propia QA');
+-        $response->assertDontSee('Solicitud ajena QA');
++
++        $permisoIds = $response->viewData('permisos')->getCollection()->pluck('id')->all();
++
++        $this->assertContains($permisoPropio->id, $permisoIds);
++        $this->assertNotContains($permisoAjeno->id, $permisoIds);
++        $response->assertSee('Funcionaria Propia QA');
++        $response->assertSee('26/10/2026');
++        $response->assertDontSee('Funcionaria Ajena QA');
++        $response->assertDontSee('03/11/2026');
+     }
+ 
+     public function test_hu03_03_media_jornada_aprobada_aporta_medio_dia(): void
+
+===== VERIFICACIÓN DE AISLAMIENTO PREVIA =====
+Resultado observado: {"app_env":"testing","configured_database":"testing","selected_database":"testing"}
+La prueba conserva beforeRefreshingDatabase() con las tres comprobaciones originales.
+
+===== CONFIGURACIÓN TEMPORAL SIN SECRETOS =====
+Archivo temporal: phpunit.fase2-hu03-02.tmp.xml
+Única diferencia respecto de phpunit.xml: DB_HOST=127.0.0.1 -> DB_HOST=mysql
+
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <server name="APP_ENV" value="testing" force="true"/>
+        <server name="APP_MAINTENANCE_DRIVER" value="file" force="true"/>
+        <server name="BCRYPT_ROUNDS" value="4" force="true"/>
+        <server name="BROADCAST_CONNECTION" value="null" force="true"/>
+        <server name="CACHE_STORE" value="array" force="true"/>
+        <server name="DB_CONNECTION" value="mysql" force="true"/>
+        <server name="DB_HOST" value="mysql" force="true"/>
+        <server name="DB_PORT" value="3306" force="true"/>
+        <server name="DB_DATABASE" value="testing" force="true"/>
+        <server name="DB_URL" value=""/>
+        <server name="MAIL_MAILER" value="array" force="true"/>
+        <server name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <server name="SESSION_DRIVER" value="array" force="true"/>
+        <server name="PULSE_ENABLED" value="false" force="true"/>
+        <server name="TELESCOPE_ENABLED" value="false" force="true"/>
+        <server name="NIGHTWATCH_ENABLED" value="false" force="true"/>
+    </php>
+</phpunit>
+
+===== COMANDO =====
+docker compose exec -T -e APP_ENV=testing -e DB_DATABASE=testing -e XDEBUG_MODE=off laravel.test php vendor/bin/phpunit --configuration phpunit.fase2-hu03-02.tmp.xml --filter test_hu03_02_lista_solo_solicitudes_propias_del_funcionario --testdox --colors=never tests/Feature/Fase2RevalidacionQaTest.php
+
+Código de salida: 0
+
+===== STDOUT COMPLETO =====
+PHPUnit 12.5.40 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.5.12
+Configuration: /var/www/html/phpunit.fase2-hu03-02.tmp.xml
+
+.                                                                   1 / 1 (100%)
+
+Time: 01:16.810, Memory: 54.50 MB
+
+Fase2Revalidacion Qa (Tests\Feature\Fase2RevalidacionQa)
+ ✔ Hu03 02 lista solo solicitudes propias del funcionario
+
+OK (1 test, 10 assertions)
+
+===== STDERR COMPLETO =====
+

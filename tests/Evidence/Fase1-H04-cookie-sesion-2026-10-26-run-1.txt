@@ -1,0 +1,67 @@
+SGD-Chorombo - QA Fase 1 - H04 - propagación de cookie de sesión - ejecución 1
+Fecha: 2026-10-26
+Commit: 5f37f4a80ca189c7ef49658871ab384700ca6e0e
+Archivo modificado: tests/Feature/Fase1CorreccionesQaTest.php
+Copia exacta anterior: tests/Evidence/Fase1CorreccionesQaTest-before-H04-cookie-2026-10-26-1.php.txt
+
+===== CAMBIO REALIZADO =====
+Se modificó únicamente el caso test_h04_credenciales_incorrectas_no_autentican_y_muestran_mensaje_en_espanol.
+
+Código anterior del GET:
+
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee($mensaje);
+
+Código nuevo:
+
+        $sessionCookieName = (string) config('session.cookie');
+        $sessionCookie = $response->getCookie($sessionCookieName, false);
+        $this->assertNotNull($sessionCookie);
+
+        $this->withUnencryptedCookie($sessionCookieName, $sessionCookie->getValue())
+            ->get(route('login'))
+            ->assertOk()
+            ->assertSee($mensaje);
+
+Motivo del tratamiento de la cookie:
+- TestResponse::getCookie($nombre, false) obtiene el valor cifrado tal como fue recibido en la respuesta.
+- withUnencryptedCookie envía ese valor sin volver a cifrarlo en MakesHttpRequests::prepareCookiesForRequest.
+- El middleware EncryptCookies lo descifra una sola vez al procesar el GET.
+- No se fabricó una sesión ni se insertó manualmente el mensaje esperado.
+
+Se conservaron las comprobaciones de redirección, error email en español, invitado, respuesta 200 y mensaje HTML. La guarda beforeRefreshingDatabase y los otros cinco casos no se modificaron.
+
+===== VERIFICACIÓN PREVIA DE AISLAMIENTO =====
+Comando:
+docker compose exec -T -e APP_ENV=testing -e DB_CONNECTION=mysql -e DB_HOST=mysql -e DB_PORT=3306 -e DB_DATABASE=testing -e SESSION_DRIVER=array laravel.test php artisan tinker --execute 'dump(["environment" => app()->environment(), "configured_database" => config("database.connections.".config("database.default").".database"), "active_database" => DB::selectOne("select database() as database_name")->database_name, "session_driver" => config("session.driver")]);'
+
+Salida:
+array:4 [
+  "environment" => "testing"
+  "configured_database" => "testing"
+  "active_database" => "testing"
+  "session_driver" => "array"
+]
+
+===== CONFIGURACIÓN TEMPORAL =====
+Archivo: phpunit.qa-h04-cookie-20261026-run1.xml
+Único cambio respecto de phpunit.xml: DB_HOST=127.0.0.1 -> DB_HOST=mysql
+La configuración temporal se retira después de guardar esta evidencia.
+
+===== EJECUCIÓN ÚNICA =====
+Comando:
+docker compose exec -T -e XDEBUG_MODE=off laravel.test vendor/bin/phpunit --configuration phpunit.qa-h04-cookie-20261026-run1.xml --colors=never --do-not-cache-result --filter test_h04_credenciales_incorrectas_no_autentican_y_muestran_mensaje_en_espanol tests/Feature/Fase1CorreccionesQaTest.php
+
+Código de salida: 0
+
+===== STDOUT =====
+PHPUnit 12.5.40 by Sebastian Bergmann and contributors.
+Runtime:       PHP 8.5.12
+Configuration: /var/www/html/phpunit.qa-h04-cookie-20261026-run1.xml
+.                                                                   1 / 1 (100%)
+Time: 00:22.113, Memory: 54.50 MB
+OK (1 test, 11 assertions)
+
+===== STDERR =====
+

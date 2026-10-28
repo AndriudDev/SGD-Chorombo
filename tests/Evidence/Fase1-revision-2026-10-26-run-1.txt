@@ -1,0 +1,32 @@
+SGD-Chorombo - QA Fase 1 - revisión de correcciones - ejecución 1
+Inicio UTC: 2026-10-26T14:52:31.639Z
+Fin UTC: 2026-10-26T14:56:19.914Z
+Rama: qa/fase1-revision-20261026
+Commit base: 5f37f4a80ca189c7ef49658871ab384700ca6e0e
+Comando: docker compose exec -T -e APP_ENV=testing -e DB_CONNECTION=mysql -e DB_HOST=mysql -e DB_PORT=3306 -e DB_DATABASE=testing -e DB_URL= -e XDEBUG_MODE=off laravel.test php artisan test tests/Feature/RegistrationDisabledTest.php tests/Feature/RoleAccessTest.php --configuration=phpunit.qa-fase1-20261026-run1.xml --no-ansi
+Configuración temporal: phpunit.qa-fase1-20261026-run1.xml
+Cambio temporal respecto de phpunit.xml: únicamente DB_HOST=127.0.0.1 -> DB_HOST=mysql
+Aislamiento verificado antes de ejecutar: APP_ENV=testing; conexión=mysql; base configurada=testing; SELECT DATABASE()=testing
+Código de salida: 1
+
+===== STDOUT =====
+
+  [30;43;1m WARN [39;49;22m Option --configuration cannot be used more than once
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\RegistrationDisabledTest[39m
+  [32;1m✓[39;22m[90m [39m[90mregister routes are removed[39m[90m                                        [39m [90m32.42s[39m  
+  [32;1m✓[39;22m[90m [39m[90mlogin page does not offer registration[39m[90m                              [39m [90m9.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mguest cannot access user creation[39m[90m                                   [39m [90m1.89s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\RoleAccessTest[39m
+  [32;1m✓[39;22m[90m [39m[90madministracion login redirects to admin panel[39m[90m                      [39m [90m41.56s[39m  
+  [32;1m✓[39;22m[90m [39m[90mnon admin roles login redirect to dashboard[39m[90m                         [39m [90m1.28s[39m  
+  [32;1m✓[39;22m[90m [39m[90many authenticated user can view dashboard[39m[90m                           [39m [90m2.32s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin resources are forbidden for non admin roles[39m[90m                   [39m [90m1.47s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin role can access admin resources[39m[90m                               [39m [90m1.73s[39m  
+
+  [90mTests:[39m    [32;1m8 passed[39;22m[90m (23 assertions)[39m
+  [90mDuration:[39m [39m184.72s[39m
+
+
+===== STDERR =====

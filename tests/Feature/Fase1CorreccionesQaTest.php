@@ -1,0 +1,176 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Tests\TestCase;
+
+class Fase1CorreccionesQaTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function beforeRefreshingDatabase(): void
+    {
+        $this->assertSame('testing', app()->environment());
+
+        $connection = config('database.default');
+        $this->assertSame('testing', config("database.connections.{$connection}.database"));
+
+        $activeDatabase = DB::selectOne('select database() as database_name');
+        $this->assertSame('testing', $activeDatabase->database_name);
+    }
+
+    public function test_h01_administracion_crea_usuario_con_un_unico_rol_valido(): void
+    {
+        $administrador = $this->createUserWithRole('administracion');
+        $secretaria = $this->createRole('secretaria', 'Secretaría');
+
+        $response = $this->actingAs($administrador)->post(route('users.store'), [
+            'name' => 'Usuario QA Rol Único',
+            'email' => 'qa.h01.creacion@example.test',
+            'password' => 'password-segura',
+            'role' => $secretaria->id,
+        ]);
+
+        $response->assertRedirect(route('users.index'));
+        $response->assertSessionHasNoErrors();
+
+        $usuario = User::where('email', 'qa.h01.creacion@example.test')->firstOrFail();
+
+        $this->assertSame([$secretaria->id], $usuario->roles()->pluck('roles.id')->all());
+    }
+
+    public function test_h01_administracion_sustituye_el_rol_y_conserva_exactamente_uno(): void
+    {
+        $administrador = $this->createUserWithRole('administracion');
+        $secretaria = $this->createRole('secretaria', 'Secretaría');
+        $utp = $this->createRole('utp', 'UTP');
+        $usuario = User::factory()->create([
+            'name' => 'Usuario QA Edición',
+            'email' => 'qa.h01.edicion@example.test',
+        ]);
+        $usuario->roles()->attach($secretaria);
+
+        $response = $this->actingAs($administrador)->put(route('users.update', $usuario), [
+            'name' => 'Usuario QA Edición',
+            'email' => 'qa.h01.edicion@example.test',
+            'role' => $utp->id,
+        ]);
+
+        $response->assertRedirect(route('users.index'));
+        $response->assertSessionHasNoErrors();
+
+        $this->assertSame([$utp->id], $usuario->roles()->pluck('roles.id')->all());
+    }
+
+    public function test_h01_rechaza_varios_roles_al_crear_sin_crear_usuario_ni_asignaciones(): void
+    {
+        $administrador = $this->createUserWithRole('administracion');
+        $secretaria = $this->createRole('secretaria', 'Secretaría');
+        $utp = $this->createRole('utp', 'UTP');
+        $asignacionesAntes = DB::table('role_user')->count();
+
+        $response = $this->actingAs($administrador)->post(route('users.store'), [
+            'name' => 'Usuario QA Multirrol',
+            'email' => 'qa.h01.multirrol.creacion@example.test',
+            'password' => 'password-segura',
+            'role' => [$secretaria->id, $utp->id],
+        ]);
+
+        $response->assertSessionHasErrors('role');
+        $this->assertDatabaseMissing('users', [
+            'email' => 'qa.h01.multirrol.creacion@example.test',
+        ]);
+        $this->assertSame($asignacionesAntes, DB::table('role_user')->count());
+    }
+
+    public function test_h01_rechaza_varios_roles_al_editar_sin_alterar_usuario_ni_asignacion(): void
+    {
+        $administrador = $this->createUserWithRole('administracion');
+        $secretaria = $this->createRole('secretaria', 'Secretaría');
+        $utp = $this->createRole('utp', 'UTP');
+        $usuario = User::factory()->create([
+            'name' => 'Usuario QA Sin Cambios',
+            'email' => 'qa.h01.multirrol.edicion@example.test',
+        ]);
+        $usuario->roles()->attach($secretaria);
+        $asignacionesAntes = DB::table('role_user')->count();
+
+        $response = $this->actingAs($administrador)->put(route('users.update', $usuario), [
+            'name' => 'Nombre No Autorizado',
+            'email' => 'qa.h01.alterado@example.test',
+            'role' => [$secretaria->id, $utp->id],
+        ]);
+
+        $response->assertSessionHasErrors('role');
+
+        $usuario->refresh();
+        $this->assertSame('Usuario QA Sin Cambios', $usuario->name);
+        $this->assertSame('qa.h01.multirrol.edicion@example.test', $usuario->email);
+        $this->assertSame([$secretaria->id], $usuario->roles()->pluck('roles.id')->all());
+        $this->assertSame($asignacionesAntes, DB::table('role_user')->count());
+    }
+
+    public function test_h04_credenciales_incorrectas_no_autentican_y_muestran_mensaje_en_espanol(): void
+    {
+        $usuario = $this->createUserWithRole('secretaria', 'Secretaría', 'clave-correcta');
+        $mensaje = 'Credenciales inválidas. Verifica tu correo y contraseña.';
+
+        $response = $this->from(route('login'))->post(route('login'), [
+            'email' => $usuario->email,
+            'password' => 'clave-incorrecta',
+        ]);
+
+        $response->assertRedirect(route('login'));
+        $response->assertSessionHasErrors(['email' => $mensaje]);
+        $this->assertGuest();
+
+        $sessionCookieName = (string) config('session.cookie');
+        $sessionCookie = $response->getCookie($sessionCookieName, false);
+        $this->assertNotNull($sessionCookie);
+
+        $this->withUnencryptedCookie($sessionCookieName, $sessionCookie->getValue())
+            ->get(route('login'))
+            ->assertOk()
+            ->assertSee($mensaje);
+    }
+
+    public function test_h04_credenciales_correctas_permiten_iniciar_sesion(): void
+    {
+        $usuario = $this->createUserWithRole('secretaria', 'Secretaría', 'clave-correcta');
+
+        $response = $this->post(route('login'), [
+            'email' => $usuario->email,
+            'password' => 'clave-correcta',
+        ]);
+
+        $response->assertRedirect(route('dashboard'));
+        $this->assertAuthenticatedAs($usuario);
+    }
+
+    private function createRole(string $name, ?string $displayName = null): Role
+    {
+        return Role::create([
+            'name' => $name,
+            'display_name' => $displayName ?? ucfirst($name),
+        ]);
+    }
+
+    private function createUserWithRole(
+        string $roleName,
+        ?string $displayName = null,
+        string $password = 'password',
+    ): User {
+        $role = $this->createRole($roleName, $displayName);
+        $usuario = User::factory()->create([
+            'password' => Hash::make($password),
+        ]);
+        $usuario->roles()->attach($role);
+
+        return $usuario;
+    }
+}
