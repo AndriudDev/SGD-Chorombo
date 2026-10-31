@@ -40,6 +40,29 @@
                         Memos y Oficios
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="{{ route('citaciones.index') }}"
+                       class="nav-link {{ request()->routeIs('citaciones.*') ? 'active' : '' }}">
+                        <i class="bi bi-person-lines-fill"></i>
+                        Citaciones
+                    </a>
+                </li>
+                @if (auth()->user()->hasAnyRole(['convivencia', 'directora', 'utp']))
+                    <li class="nav-item">
+                        <a href="{{ route('actas.index') }}"
+                           class="nav-link {{ request()->routeIs('actas.*') ? 'active' : '' }}">
+                            <i class="bi bi-lock-fill"></i>
+                            Actas Confidenciales
+                        </a>
+                    </li>
+                @endif
+                <li class="nav-item">
+                    <a href="{{ route('comunales.index') }}"
+                       class="nav-link {{ request()->routeIs('comunales.*') ? 'active' : '' }}">
+                        <i class="bi bi-people"></i>
+                        Reuniones Comunales
+                    </a>
+                </li>
                 @if (auth()->user()->hasAnyRole(['administracion', 'directora', 'secretaria', 'utp', 'convivencia']))
                     <li class="nav-item">
                         <a href="{{ route('permisos.index') }}"

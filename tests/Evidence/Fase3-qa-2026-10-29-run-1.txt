@@ -1,0 +1,85 @@
+SGD-Chorombo - QA Fase 3 (HU-04, HU-05, HU-06) - ejecución 1
+Inicio UTC: 2026-10-29T23:27:44Z
+Fin UTC: 2026-10-29T23:28:46Z
+Rama: main
+Commit (previo al cambio): 78ce0e1
+Prueba nueva: tests/Feature/Fase3QaTest.php (10 casos)
+
+===== CONFIGURACIÓN TEMPORAL SIN SECRETOS =====
+Archivo temporal: phpunit.fase3.tmp.xml
+Única diferencia respecto de phpunit.xml: DB_HOST=127.0.0.1 -> DB_HOST=mysql
+Entorno: Docker (Laravel Sail) — PHP 8.5.12 + MySQL 8.4
+Base de pruebas: testing (mismos parámetros que phpunit.xml)
+Comando: docker compose exec -T laravel.test vendor/bin/phpunit -c phpunit.fase3.tmp.xml [ruta]
+
+===== CASOS EJECUTADOS (Fase3QaTest) =====
+1. test_emitentes_registran_citacion_y_roles_directivos_la_consultan
+2. test_solo_roles_emitentes_pueden_gestionar_citaciones
+3. test_seguimiento_de_estado_de_citacion
+4. test_filtros_de_citaciones_por_estado_motivo_y_busqueda
+5. test_adjunto_de_citacion_se_almacena_y_descarga
+6. test_convivencia_y_directora_cargan_actas_confidenciales_restringidas
+7. test_utp_consulta_solo_actas_de_ambito_pedagogico
+8. test_busqueda_de_actas_por_run
+9. test_utp_carga_reuniones_comunales_y_demas_roles_consultan
+10. test_compromisos_de_reunion_con_fecha_limite
+
+===== SALIDA Fase3QaTest =====
+PHPUnit 12.5.40 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.5.12
+Configuration: /var/www/html/phpunit.fase3.tmp.xml
+
+..........                                                        10 / 10 (100%)
+
+Time: 00:13.450, Memory: 62.50 MB
+
+OK (10 tests, 84 assertions)
+
+MD5 salida: cb81120b801820453e6d8c990ce3fc50
+
+===== SALIDA SUITE COMPLETA (regresión Fase 1 + 2 + 3) =====
+PHPUnit 12.5.40 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.5.12
+Configuration: /var/www/html/phpunit.fase3.tmp.xml
+
+.....................................................             53 / 53 (100%)
+
+Time: 00:24.309, Memory: 66.50 MB
+
+OK (53 tests, 245 assertions)
+
+MD5 salida: 0bbf5283acc66189fc49bf952ea01cb4
+
+===== SMOKE UI EN NAVEGADOR (entorno local http://localhost) =====
+Secretaría: login OK; sidebar/tarjetas muestran Citaciones y Reuniones y OCULTAN Actas;
+  índice de citaciones renderiza filtros (estado/motivo/búsqueda);
+  alta de citación desde formulario real → fila visible con RUN, fecha 10/11/2026 11:30 hrs,
+  motivo Conductual, estado Programada, autor "Secretaría Escolar" + alerta de éxito;
+  show de citación renderiza panel "Actualizar estado" → cambio a "Asistió" persiste.
+UTP: login OK; actas index muestra aviso "consulta restringida a acuerdos de ámbito pedagógico",
+  sin botón "Nueva Acta"; GET /actas-confidenciales/create → 403 "Acceso denegado";
+  índice de citaciones en modo solo lectura (sin botón de alta);
+  acta de ámbito pedagógica visible para UTP; descarga con respuesta adjunta (ERR_ABORTED en navegación = descarga iniciada).
+UTP (HU-06): alta de reunión con archivo PDF real → show con sección de compromisos;
+  alta de compromiso con fecha límite → fila + alerta de éxito; formulario de edición de compromiso renderiza.
+Convivencia: tarjeta "Actas Confidenciales" visible; alta de acta con archivo real
+  → "Acta confidencial registrada correctamente." y fila en índice.
+Secretaría: /actas-confidenciales → 403; /reuniones-comunales/create → 403;
+  índice de reuniones en modo lectura (ve "Red UTP — Sesión Smoke").
+
+===== HALLAZGOS CORREGIDOS DURANTE EL QA =====
+1. MySQL estricto rechazaba el INSERT de actas/reuniones sin 'archivo' (create previo a subir).
+   Corrección: columna nullable en ambas migraciones, igual que el patrón de memos
+   (la validación de formulario exige el archivo al crear).
+2. Los "scopes" estáticos de los modelos nuevos (byAmbito/search/…) no eran invocables desde
+   Eloquent\Builder (Laravel solo resuelve named scopes scope*). Corrección: convertidos a
+   named scopes con firma scopeX(Builder $query, …) en Citacion, ActaConfidencial y ReunionComunal.
+3. Citacion no declaraba $table y Laravel pluralizaba a 'citacions'. Corrección:
+   protected $table = 'citaciones'.
+
+===== NOTA =====
+Nota (no incluido en este alcance): Memo::byTipo/search y PermisoAdministrativo::pendientes/byEstado
+son métodos estáticos con el mismo patrón no invocable desde Builder; los filtros con query string
+de esos módulos no están ejercitados por los tests de Fase 2. Pendiente de aprobación aparte.
