@@ -1,0 +1,166 @@
+Matriz general QA actualizada — fases 1 y 2
+Fecha: 2026-11-01
+Rama: qa/cierre-fases1-2-20261029
+Commit: 78ce0e194b6fcd1a02064d33972818e63c8e48b5
+Aplicación modificada: no
+
+=== ALCANCE Y ADVERTENCIA ===
+Esta matriz consolida evidencia preservada de varias ejecuciones aisladas. No representa una ejecución conjunta actual de toda la regresión.
+La revalidación actual ejecutó únicamente los listados propios de UTP y Convivencia.
+La aprobación de HU-03 no implica el cierre global de las fases 1 y 2.
+
+Estados usados:
+- VERIFICADO: comportamiento aprobado mediante una ejecución registrada.
+- NO CONCLUYENTE: existe una observación, pero falta una regla para definir el resultado esperado.
+- PENDIENTE TÉCNICO: implementación, invariante o cobertura automatizada aún no demostrada completamente.
+- PENDIENTE NAVEGADOR: falta recorrer el flujo con un navegador real.
+- PENDIENTE REQUISITO: contrato ambiguo, contradictorio o incompleto.
+
+=== EVIDENCIA CONSOLIDADA ===
+1. tests/Evidence/Cierre-fases1-2-2026-10-30-run-2.txt
+   - 42 casos, 160 aserciones, código 0.
+   - Cubrió autenticación, registro público deshabilitado, panel administrativo, gestión de usuarios, correspondencia y bloque base de permisos.
+2. tests/Evidence/Fase2-validaciones-2026-10-31-run-1.txt
+   - 4 casos, 37 aserciones, código 0.
+   - Cubrió campos obligatorios de correspondencia, folio duplicado, orden de fechas y jornada inválida.
+3. tests/Evidence/Fases1-2-matriz-pendiente-2026-10-31-run-1.txt
+   - 17 casos, 126 aserciones, un fallo.
+   - Dieciséis casos aprobaron. El 403 esperado para Convivencia en correspondencia quedó NO CONCLUYENTE por falta de regla específica; no se clasifica como defecto.
+4. tests/Evidence/Permisos-administrativos-matriz-roles-2026-11-01-run-1.txt
+   - 9 casos, 69 aserciones, dos fallos por aserciones de presentación ajenas al contrato de propiedad.
+   - Las comprobaciones de ID propio incluido e ID ajeno excluido se alcanzaron antes de esos fallos; las aserciones de presentación fueron retiradas.
+5. tests/Evidence/Permisos-administrativos-creacion-delegada-2026-11-01-run-1.txt
+   - 2 casos, 14 aserciones, código 0.
+6. tests/Evidence/Permisos-administrativos-listados-revalidacion-2026-11-01-run-1.txt
+   - Revalidación actual: 2 casos, 12 aserciones, código 0, --fail-on-risky.
+   - Confirma listados propios de UTP y Convivencia sin alterar las comprobaciones de propiedad y exclusión.
+
+Las cifras no se suman porque varias ejecuciones contienen cobertura superpuesta.
+
+=== FASE 1 — AUTENTICACIÓN, USUARIOS Y RBAC ===
+
+HU-01 — Creación y asignación de usuarios
+Estado: VERIFICADO en capa HTTP/aplicación.
+Cobertura observada:
+- Administración crea usuarios con un único rol válido.
+- La edición sustituye el rol anterior y conserva una sola asignación.
+- Payloads con varios roles son rechazados sin crear o alterar asignaciones.
+- Se ejercitaron los cinco roles mediante la cobertura acumulada.
+- El registro público está deshabilitado y un invitado no accede a la creación de usuarios.
+Pendiente técnico:
+- La tabla role_user usa clave primaria compuesta (role_id, user_id), pero no una restricción única sobre user_id. La regla de exactamente un rol está protegida por la aplicación, no como invariante de base de datos.
+Pendiente navegador:
+- Crear y editar usuarios desde el formulario real, comprobar selector de los cinco roles, mensajes, navegación y estados visuales.
+Pendiente requisito:
+- Definir si el “acceso total” de Dirección incluye el panel de usuarios. brief.md:25 lo reserva a Administración, mientras requerimientos.md:51 declara acceso total de Dirección.
+
+HU-01 — Acceso por rol
+Estado: PARCIALMENTE VERIFICADO.
+Cobertura observada:
+- Administración accede a recursos administrativos; Secretaría, UTP y Convivencia reciben prohibición.
+- Dirección puede leer y descargar correspondencia.
+- UTP puede leer correspondencia general.
+- Los roles autenticados acceden al dashboard y reciben redirección según rol.
+No concluyente:
+- El acceso de Convivencia a correspondencia general. Se requiere una regla explícita antes de esperar HTTP 403 o HTTP 200.
+Pendiente técnico:
+- No hay una matriz ejecutada de todos los roles contra todas las acciones de cada módulo de fases 1 y 2 en una única corrida.
+Pendiente navegador:
+- Verificar menús visibles, enlaces ocultos, navegación directa por URL y presentación de respuestas 403 para cada rol.
+Pendiente requisito:
+- Precisar roles autorizados para crear, editar, eliminar y descargar Memos/Oficios, especialmente Convivencia y Dirección.
+
+Hallazgo Fase 1 H04 — autenticación
+Estado: VERIFICADO en HTTP.
+Cobertura observada:
+- Credenciales correctas autentican.
+- Credenciales incorrectas no autentican y muestran mensaje en español.
+- Registro público y enlace de registro ausentes.
+Pendiente navegador:
+- Flujo real de inicio y cierre de sesión, persistencia/expiración de sesión, cookies y protección CSRF desde navegador.
+
+=== FASE 2 — HU-02 MEMOS Y OFICIOS ===
+
+Registro y validación
+Estado: PARCIALMENTE VERIFICADO.
+Cobertura observada:
+- Rechazo sin folio, tipo, fecha, destinatario y asunto.
+- Registro de PDF y listado posterior.
+- Registro de oficio Word de exactamente 15 MB.
+- Rechazo de archivo superior a 15 MB.
+- Rechazo de extensión distinta de PDF o Word.
+- Rechazo de folio duplicado para el mismo tipo y año calendario usado por la aplicación.
+- Secretaría gestiona registros propios; Administración gestiona registros ajenos; Dirección lee y descarga.
+Pendiente técnico:
+- La unicidad folio/año se valida en aplicación y la migración solo indexa folio; falta una garantía de base de datos o estrategia contra carreras concurrentes.
+- Falta demostrar MIME inconsistente respecto de la extensión y archivos dañados.
+- Falta verificar con almacenamiento local real el ciclo completo: persistencia física, descarga efectiva, reemplazo al actualizar y eliminación del archivo asociado. Las pruebas de carga usan almacenamiento simulado.
+Pendiente navegador:
+- Registrar Memo y Oficio desde formulario, seleccionar archivos PDF/DOC/DOCX, observar mensajes de validación, listar, filtrar, descargar, editar y eliminar usando navegador real.
+Pendiente requisito:
+- Determinar si emisor es obligatorio: aparece en requerimientos.md:63, pero no en el criterio de aceptación ni en StoreMemoRequest.
+- Determinar si el archivo es obligatorio: requerimientos.md:67 exige adjuntarlo, pero StoreMemoRequest lo permite nullable.
+- Definir si Memo y Oficio comparten correlativo.
+- Definir “año escolar” y si difiere del año calendario derivado de fecha.
+- Definir completamente qué roles tienen lectura y qué roles tienen gestión.
+
+=== FASE 2 — HU-03 PERMISOS ADMINISTRATIVOS ===
+
+Solicitud, propiedad y matriz de roles
+Estado: VERIFICADO para la tabla operativa compartida.
+Cobertura observada:
+- Campos obligatorios, fecha final igual o posterior a fecha inicial y jornada completa/media.
+- Secretaría, UTP y Convivencia crean solicitudes propias.
+- Secretaría, UTP y Convivencia solo listan solicitudes propias y no editan, eliminan, aprueban ni rechazan.
+- La revalidación actual confirmó para UTP y Convivencia que el ID propio aparece y el ID ajeno queda excluido.
+- Dirección y Administración visualizan solicitudes de distintos funcionarios.
+- Dirección y Administración editan, eliminan, aprueban y rechazan según la cobertura acumulada.
+- Dirección y Administración crean solicitudes para otro funcionario, conservando destinatario en user_id y creador en created_by.
+
+Estados, alertas y acumulados
+Estado: VERIFICADO en HTTP/renderizado servidor.
+Cobertura observada:
+- Solicitud nueva queda pendiente.
+- Aprobación registra estado y aprobador e incrementa acumulado.
+- Rechazo registra estado y aprobador sin incrementar acumulado.
+- Jornadas completas y medias aportan 1 y 0,5; pendientes no suman.
+- Dirección y Administración ven alerta visual de solicitudes pendientes.
+Pendiente técnico:
+- HU-03 menciona formulario o respaldo firmado, pero no existe campo, almacenamiento ni validación de adjunto en permisos.
+- aprobar() y rechazar() no bloquean explícitamente el reprocesamiento de solicitudes ya aprobadas o rechazadas; update() y destroy() sí exigen estado pendiente.
+- El listado supervisor calcula acumulados con una consulta por funcionario visible; falta evaluar y evitar crecimiento N+1.
+- No se ejecutó una regresión conjunta de todos los archivos QA después de añadir la matriz completa de permisos.
+Pendiente navegador:
+- Crear solicitudes propias y delegadas desde formulario real.
+- Comprobar selector de funcionario para supervisores y su ausencia para otros roles.
+- Verificar alertas/badges, filtros, acumulados, botones por estado, confirmaciones y navegación directa por URL.
+Pendiente requisito:
+- Definir formato, tamaño, obligatoriedad y conservación del formulario o respaldo firmado.
+- Definir si número de días se ingresa o se calcula; si usa días calendario o hábiles; y cómo aplica media jornada en rangos de varios días.
+- Definir transiciones válidas: si una solicitud procesada puede volver a aprobarse o rechazarse.
+- Incorporar formalmente al requisito la creación delegada por Dirección/Administración, aunque ya esté implementada y verificada técnicamente.
+
+=== PENDIENTES TRANSVERSALES ===
+
+Técnicos
+- Ejecutar, cuando se autorice, una regresión consolidada que incluya todos los archivos QA actuales; la última corrida conjunta de 42 casos es anterior a los archivos nuevos.
+- Decidir si las invariantes críticas de rol único y folio/año requieren protección en base de datos además de la validación de aplicación.
+- Completar pruebas de almacenamiento físico y archivos reales sin sustituirlas por Storage::fake.
+- Resolver soporte de respaldo firmado y transición de estados de permisos.
+
+Navegador
+- No existe evidencia de una pasada end-to-end con navegador real para fases 1 y 2.
+- Quedan pendientes autenticación/sesión, administración de usuarios, menús por rol, correspondencia con archivos reales y permisos/alertas/confirmaciones.
+
+Requisitos
+- Acceso de Dirección al panel de usuarios.
+- Acceso de Convivencia y matriz completa de roles sobre correspondencia.
+- Emisor y obligatoriedad del archivo de correspondencia.
+- Correlativo compartido y definición de año escolar.
+- Respaldo firmado de permisos, cálculo de días y transiciones de estado.
+- Formalización de creación delegada de permisos.
+
+=== ESTADO GENERAL ===
+La revalidación de los listados de UTP y Convivencia está aprobada.
+HU-03 tiene cobertura técnica amplia para la tabla operativa compartida, pero conserva pendientes técnicos, de navegador y de requisitos.
+Fases 1 y 2 NO se declaran cerradas globalmente con esta evidencia.

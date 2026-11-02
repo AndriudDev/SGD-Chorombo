@@ -1,0 +1,20 @@
+EVIDENCIA QA RESUMIDA — MATRIZ DE ROLES DE PERMISOS ADMINISTRATIVOS
+Fecha: 2026-11-01
+Entorno: Laravel testing, MySQL database=testing, aislamiento verificado antes de ejecutar.
+
+Ejecución inicial:
+- 9 pruebas, 69 aserciones, 2 fallos, código de salida 1.
+- Aprobaron los cinco casos de supervisión de Administración/Dirección y las prohibiciones de edición, eliminación y decisión para UTP y Convivencia.
+- Los dos casos de listado aprobaron HTTP 200, inclusión del ID propio y exclusión del ID ajeno.
+- Los fallos posteriores provenían de dos aserciones adicionales sobre el texto del motivo, campo que la tabla no renderiza y que no formaba parte del contrato de aislamiento.
+
+Corrección QA documentada:
+- Se retiraron únicamente esas dos aserciones ajenas al contrato; no se cambió la petición, los datos ni las comprobaciones por ID.
+- Esta evidencia histórica no presentó una segunda ejecución.
+- La ejecución consolidada posterior `Fases1-2-suite-qa-2026-11-01-run-1.txt` incluyó los 9 casos de la matriz en estado aprobado dentro de una suite de 77 pruebas y 437 aserciones.
+
+Pendientes funcionales conservados:
+- La matriz compartida no define si Dirección/Administración crean solicitudes para terceros.
+- El acceso de Convivencia a correspondencia general sigue pendiente de una regla específica.
+
+No contiene tokens CSRF, HTML renderizado, código fuente, credenciales, rutas personales ni identificadores de infraestructura.

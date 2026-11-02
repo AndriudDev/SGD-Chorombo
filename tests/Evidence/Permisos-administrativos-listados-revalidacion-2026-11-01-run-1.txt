@@ -1,0 +1,11 @@
+EVIDENCIA QA RESUMIDA — REVALIDACIÓN DE LISTADOS DE PERMISOS
+Fecha: 2026-11-01
+Entorno: Laravel testing, MySQL database=testing, aislamiento verificado antes de ejecutar.
+Resultado: APROBADO — 2 pruebas, 12 aserciones, código de salida 0, STDERR vacío.
+
+Casos verificados:
+- UTP visualiza únicamente sus solicitudes propias.
+- Convivencia visualiza únicamente sus solicitudes propias.
+
+Cada caso comprobó HTTP 200, presencia del registro propio y ausencia del registro ajeno mediante identificadores de la colección paginada.
+No contiene configuración completa, código fuente duplicado, credenciales, tokens, HTML, rutas personales ni identificadores de infraestructura.

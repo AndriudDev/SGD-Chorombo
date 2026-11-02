@@ -1,0 +1,12 @@
+EVIDENCIA QA RESUMIDA — VALIDACIONES FASE 2
+Fecha: 2026-10-31
+Entorno: Laravel testing, MySQL database=testing, aislamiento verificado antes de ejecutar.
+Resultado: APROBADO — 4 pruebas, 37 aserciones, código de salida 0, STDERR vacío.
+
+Casos verificados:
+- HU-02 rechaza correspondencia sin campos obligatorios.
+- HU-02 rechaza folio duplicado dentro del mismo año.
+- HU-03 rechaza fecha final anterior a la inicial.
+- HU-03 rechaza un tipo de jornada inválido.
+
+No contiene configuración completa, código fuente duplicado, credenciales, tokens, HTML, rutas personales ni identificadores de infraestructura.

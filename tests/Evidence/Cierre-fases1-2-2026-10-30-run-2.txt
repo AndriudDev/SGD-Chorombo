@@ -1,0 +1,17 @@
+EVIDENCIA TÉCNICA RESUMIDA — CIERRE QA FASES 1 Y 2
+
+Fecha UTC: 2026-10-30
+Rama: qa/cierre-fases1-2-20261029
+Commit: 78ce0e194b6fcd1a02064d33972818e63c8e48b5
+Entorno: Laravel testing sobre MySQL; base efectiva y activa `testing`; configuración no cacheada; DB_URL ausente.
+Herramientas: PHP 8.5.12, PHPUnit 12.5.40.
+Ejecución: suite `cierre-fases1-2`, sin caché de resultados.
+Resultado: APROBADO — 42 pruebas, 160 aserciones, código de salida 0, STDERR vacío.
+
+Cobertura resumida:
+- Fase 1: creación y sustitución de rol único; rechazo de roles múltiples; autenticación válida e inválida.
+- Fase 2: acceso y autorización de permisos; propiedad y gestión de memorandos; creación de memorando; acumulado anual.
+- Revalidación Fase 2: memorando PDF, listados, permisos de jornada completa/media y bloqueo de edición ajena.
+- Seguridad base: registro público deshabilitado, redirecciones por rol y protección de recursos administrativos.
+
+No contiene credenciales, tokens, HTML, rutas personales ni identificadores de contenedores.

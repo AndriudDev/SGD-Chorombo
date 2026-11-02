@@ -1,0 +1,11 @@
+EVIDENCIA QA RESUMIDA — CREACIÓN DELEGADA DE PERMISOS
+Fecha: 2026-11-01
+Entorno: Laravel testing, MySQL database=testing, aislamiento verificado antes de ejecutar.
+Resultado: APROBADO — 2 pruebas, 14 aserciones, código de salida 0, STDERR vacío.
+
+Casos verificados:
+- Administración crea una solicitud para otro funcionario.
+- Dirección crea una solicitud para otro funcionario.
+
+La ejecución confirmó la persistencia correcta del usuario solicitado y del creador dentro de la base aislada de pruebas.
+No contiene configuración completa, código fuente duplicado, credenciales, tokens, HTML, rutas personales ni identificadores de infraestructura.

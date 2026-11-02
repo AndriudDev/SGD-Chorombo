@@ -1,0 +1,62 @@
+RECORRIDOS MANUALES PENDIENTES — FASES 1 Y 2
+
+ENTORNO QA AISLADO
+1. En una sesión de PowerShell, ingresar una contraseña QA temporal sin dejarla en el historial:
+   $qaPassword = Read-Host 'Contraseña QA temporal' -AsSecureString
+   $env:QA_BROWSER_PASSWORD = [System.Net.NetworkCredential]::new('', $qaPassword).Password
+2. Desde la raíz del repositorio, en la misma sesión:
+   powershell -NoProfile -ExecutionPolicy Bypass -File tests/run-fases1-2-qa.ps1 -Mode BrowserUp -Port 8081
+3. Abrir: http://127.0.0.1:8081/login
+4. Usar la contraseña temporal configurada en QA_BROWSER_PASSWORD con estas cuentas ficticias:
+   - administracion.qa@example.test
+   - directora.qa@example.test
+   - secretaria.qa@example.test
+   - utp.qa@example.test
+   - convivencia.qa@example.test
+5. Detener solo el navegador QA:
+   powershell -NoProfile -ExecutionPolicy Bypass -File tests/run-fases1-2-qa.ps1 -Mode BrowserDown
+6. Para detener también MySQL y Mailpit de Compose:
+   powershell -NoProfile -ExecutionPolicy Bypass -File tests/run-fases1-2-qa.ps1 -Mode BrowserDown -StopInfrastructure
+7. Retirar la credencial del entorno al terminar:
+   Remove-Item Env:QA_BROWSER_PASSWORD
+
+El ejecutor hace migrate:fresh únicamente sobre DB_DATABASE=testing después de un preflight separado. No usa la base normal. Todos los registros y credenciales son ficticios. La contraseña solo se recibe desde el entorno del proceso y no se imprime.
+
+RECORRIDOS BREVES
+
+1. Autenticación y sesión
+- Iniciar sesión con cada cuenta y comprobar redirección, nombre y rol visibles.
+- Cerrar sesión y confirmar que una URL autenticada redirige al login.
+- Volver atrás en el navegador y confirmar que no reaparece una sesión válida.
+
+2. Administración de usuarios
+- Con Administración, crear un usuario ficticio y seleccionar cada uno de los cinco roles.
+- Editar el usuario, cambiar su rol y comprobar que queda exactamente uno.
+- Con Dirección, Secretaría, UTP y Convivencia, intentar abrir /admin/users y confirmar la regla acordada. Dirección permanece pendiente de definición formal.
+
+3. Correspondencia con archivos reales
+- Con Secretaría, registrar un Memo PDF y un Oficio DOC/DOCX.
+- Descargar ambos y abrirlos fuera del navegador.
+- Reemplazar el archivo de un registro y comprobar que se descarga la versión nueva.
+- Eliminar el registro y confirmar que deja de estar disponible.
+- Comprobar mensajes para archivo mayor de 15 MB, formato inválido y folio repetido.
+- Repetir lectura/descarga con Dirección y UTP. No clasificar el acceso de Convivencia hasta definir la regla.
+
+4. Permisos propios
+- Con Secretaría, UTP y Convivencia, crear una solicitud propia.
+- Confirmar que cada rol solo ve sus solicitudes y no muestra acciones de editar, eliminar, aprobar o rechazar.
+- Intentar las URLs directas de gestión y confirmar HTTP 403.
+
+5. Supervisión de permisos
+- Con Dirección y Administración, comprobar listado transversal, selector de funcionario y creación delegada.
+- Aprobar una solicitud y rechazar otra; comprobar estado, aprobador y acumulado anual.
+- Confirmar alerta/badge de pendientes y que desaparece o disminuye al procesar solicitudes.
+- No reprocesar una solicitud ya decidida hasta definir la transición válida.
+
+6. Presentación
+- Revisar menús por rol, mensajes de validación, modal de confirmación, foco de teclado, tamaños móvil/escritorio y ausencia de errores visibles en consola.
+
+EJECUTOR AUTOMATIZADO
+- Suite fases 1 y 2:
+  powershell -NoProfile -ExecutionPolicy Bypass -File tests/run-fases1-2-qa.ps1 -Mode Test
+- El ejecutor excluye explícitamente solo test_hu01_convivencia_no_accede_a_correspondencia_general porque su expectativa depende de una regla todavía no definida.

@@ -1,0 +1,27 @@
+EVIDENCIA QA AUTOMATIZADA RESUMIDA — FASES 1 Y 2
+Inicio UTC: 2026-11-01T17:57:34.237Z
+Fin UTC: 2026-11-01T18:03:36.433Z
+Rama: qa/cierre-fases1-2-20261029
+Commit probado: 78ce0e194b6fcd1a02064d33972818e63c8e48b5
+Entorno: Docker Compose, Laravel testing, MySQL database=testing, configuración no cacheada.
+Comando: powershell -NoProfile -ExecutionPolicy Bypass -File tests/run-fases1-2-qa.ps1 -Mode Test
+Aislamiento: preflight confirmó APP_ENV=testing, base configurada y activa `testing`, DB_URL ausente y servidor MySQL esperado.
+Resultado: APROBADO — 77 pruebas, 437 aserciones, código de salida 0.
+
+Suites cubiertas:
+- Fase1CorreccionesQaTest
+- Fase1MatrizPendienteQaTest
+- Fase2CorrespondenciaAlmacenamientoQaTest
+- Fase2MatrizPendienteQaTest
+- Fase2QaTest
+- Fase2RevalidacionQaTest
+- Fase2ValidacionesQaTest
+- PermisosAdministrativosCreacionDelegadaQaTest
+- PermisosAdministrativosMatrizRolesQaTest
+- RegistrationDisabledTest
+- RoleAccessTest
+
+Exclusión explícita:
+- `test_hu01_convivencia_no_accede_a_correspondencia_general`, pendiente de una regla formal de acceso general para Convivencia. La prueba histórica no fue alterada ni sustituida.
+
+No contiene credenciales, tokens, HTML, rutas personales, IDs de contenedor ni salida operativa duplicada.

@@ -1,0 +1,20 @@
+EVIDENCIA QA RESUMIDA — MATRIZ PENDIENTE FASES 1 Y 2
+Fecha: 2026-10-31
+Entorno: Laravel testing, MySQL database=testing, aislamiento verificado antes de ejecutar.
+Resultado: 17 pruebas, 126 aserciones, 1 fallo esperado/documentado, código de salida 1.
+
+Resultado por alcance:
+- Fase 1: 5 casos aprobados y 1 pendiente de definición funcional.
+- Fase 2: 11 casos aprobados.
+
+Pendiente observado:
+- `test_hu01_convivencia_no_accede_a_correspondencia_general` esperaba HTTP 403 y recibió HTTP 200.
+- La regla de acceso general de Convivencia no estaba definida formalmente; el caso quedó registrado como pendiente y no fue ocultado en esta ejecución histórica.
+
+Cobertura aprobada resumida:
+- Asignación de roles y acceso administrativo.
+- Lectura/descarga de correspondencia por Dirección y UTP.
+- Carga y validación de archivos de correspondencia.
+- Creación, aprobación, rechazo, alertas y supervisión de permisos administrativos.
+
+No contiene código fuente, configuración completa, credenciales, tokens, HTML, rutas personales ni identificadores de infraestructura.
