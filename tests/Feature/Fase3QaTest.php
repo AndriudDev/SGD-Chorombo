@@ -222,6 +222,182 @@ class Fase3QaTest extends TestCase
             ->assertOk();
     }
 
+    public function test_hu04_qa_rechaza_campos_obligatorios_ausentes(): void
+    {
+        $response = $this->actingAs($this->secretaria)
+            ->from(route('citaciones.create'))
+            ->post(route('citaciones.store'), []);
+
+        $response->assertRedirect(route('citaciones.create'));
+        $response->assertSessionHasErrors([
+            'estudiante_nombre',
+            'estudiante_run',
+            'apoderado_nombre',
+            'funcionario_cita',
+            'fecha',
+            'hora',
+            'motivo',
+        ]);
+        $this->assertDatabaseCount('citaciones', 0);
+    }
+
+    public function test_hu04_qa_rechaza_fecha_hora_motivo_y_run_invalidos(): void
+    {
+        $response = $this->actingAs($this->secretaria)
+            ->from(route('citaciones.create'))
+            ->post(route('citaciones.store'), $this->datosCitacionValidos([
+                'estudiante_run' => 'RUN-DEMASIADO-LARGO',
+                'fecha' => 'fecha-invalida',
+                'hora' => '25:99',
+                'motivo' => 'motivo-invalido',
+            ]));
+
+        $response->assertRedirect(route('citaciones.create'));
+        $response->assertSessionHasErrors(['estudiante_run', 'fecha', 'hora', 'motivo']);
+        $this->assertDatabaseCount('citaciones', 0);
+    }
+
+    public function test_hu04_qa_rechaza_adjunto_mayor_a_15_mb(): void
+    {
+        $response = $this->actingAs($this->convivencia)
+            ->from(route('citaciones.create'))
+            ->post(route('citaciones.store'), $this->datosCitacionValidos([
+                'archivo' => UploadedFile::fake()->create('colilla-grande.pdf', 15361, 'application/pdf'),
+            ]));
+
+        $response->assertRedirect(route('citaciones.create'));
+        $response->assertSessionHasErrors('archivo');
+        $this->assertDatabaseCount('citaciones', 0);
+        Storage::disk('public')->assertDirectoryEmpty('/');
+    }
+
+    public function test_hu04_qa_rechaza_adjunto_con_mime_no_permitido(): void
+    {
+        $response = $this->actingAs($this->convivencia)
+            ->from(route('citaciones.create'))
+            ->post(route('citaciones.store'), $this->datosCitacionValidos([
+                'archivo' => UploadedFile::fake()->create('adjunto-ejecutable.exe', 10, 'application/x-msdownload'),
+            ]));
+
+        $response->assertRedirect(route('citaciones.create'));
+        $response->assertSessionHasErrors('archivo');
+        $this->assertDatabaseCount('citaciones', 0);
+        Storage::disk('public')->assertDirectoryEmpty('/');
+    }
+
+    public function test_hu04_qa_reemplaza_y_elimina_archivos_del_almacenamiento(): void
+    {
+        $this->actingAs($this->secretaria)
+            ->post(route('citaciones.store'), $this->datosCitacionValidos([
+                'estudiante_run' => '66.666.666-6',
+                'archivo' => UploadedFile::fake()->create('colilla-original.pdf', 100, 'application/pdf'),
+            ]))
+            ->assertRedirect(route('citaciones.index'));
+
+        $citacion = Citacion::where('estudiante_run', '66.666.666-6')->firstOrFail();
+        $archivoOriginal = $citacion->archivo;
+        Storage::disk('public')->assertExists($archivoOriginal);
+
+        $this->actingAs($this->secretaria)
+            ->put(route('citaciones.update', $citacion), $this->datosCitacionValidos([
+                'estudiante_run' => '66.666.666-6',
+                'archivo' => UploadedFile::fake()->image('colilla-reemplazo.jpg'),
+            ]))
+            ->assertRedirect(route('citaciones.index'));
+
+        $citacion->refresh();
+        $this->assertNotSame($archivoOriginal, $citacion->archivo);
+        Storage::disk('public')->assertMissing($archivoOriginal);
+        Storage::disk('public')->assertExists($citacion->archivo);
+
+        $archivoReemplazo = $citacion->archivo;
+
+        $this->actingAs($this->secretaria)
+            ->delete(route('citaciones.destroy', $citacion))
+            ->assertRedirect(route('citaciones.index'));
+
+        $this->assertDatabaseMissing('citaciones', ['id' => $citacion->id]);
+        Storage::disk('public')->assertMissing($archivoReemplazo);
+    }
+
+    public function test_hu04_qa_roles_no_emitentes_reciben_403_en_rutas_de_gestion(): void
+    {
+        $citacion = Citacion::create($this->datosCitacionValidos([
+            'estado' => 'programada',
+            'user_id' => $this->secretaria->id,
+        ]));
+        $datosActualizados = $this->datosCitacionValidos([
+            'apoderado_nombre' => 'Intento no autorizado',
+        ]);
+
+        foreach ([$this->utp, $this->admin] as $usuarioSinPermiso) {
+            $this->actingAs($usuarioSinPermiso)
+                ->get(route('citaciones.create'))
+                ->assertForbidden();
+            $this->actingAs($usuarioSinPermiso)
+                ->post(route('citaciones.store'), $datosActualizados)
+                ->assertForbidden();
+            $this->actingAs($usuarioSinPermiso)
+                ->get(route('citaciones.edit', $citacion))
+                ->assertForbidden();
+            $this->actingAs($usuarioSinPermiso)
+                ->put(route('citaciones.update', $citacion), $datosActualizados)
+                ->assertForbidden();
+            $this->actingAs($usuarioSinPermiso)
+                ->patch(route('citaciones.estado', $citacion), ['estado' => 'asistio'])
+                ->assertForbidden();
+            $this->actingAs($usuarioSinPermiso)
+                ->delete(route('citaciones.destroy', $citacion))
+                ->assertForbidden();
+        }
+
+        $this->assertDatabaseCount('citaciones', 1);
+        $this->assertDatabaseHas('citaciones', [
+            'id' => $citacion->id,
+            'apoderado_nombre' => 'Apoderado QA',
+            'estado' => 'programada',
+        ]);
+    }
+
+    public function test_hu04_qa_secretaria_y_convivencia_realizan_crud_autorizado(): void
+    {
+        $casos = [
+            [$this->secretaria, '77.777.777-7'],
+            [$this->convivencia, '88.888.888-8'],
+        ];
+
+        foreach ($casos as [$usuarioEmisor, $run]) {
+            $this->actingAs($usuarioEmisor)
+                ->post(route('citaciones.store'), $this->datosCitacionValidos([
+                    'estudiante_run' => $run,
+                ]))
+                ->assertRedirect(route('citaciones.index'));
+
+            $citacion = Citacion::where('estudiante_run', $run)->firstOrFail();
+            $this->assertSame($usuarioEmisor->id, $citacion->user_id);
+
+            $this->actingAs($usuarioEmisor)
+                ->put(route('citaciones.update', $citacion), $this->datosCitacionValidos([
+                    'estudiante_run' => $run,
+                    'apoderado_nombre' => 'Apoderado QA actualizado',
+                    'motivo' => 'administrativo',
+                ]))
+                ->assertRedirect(route('citaciones.index'));
+
+            $this->assertDatabaseHas('citaciones', [
+                'id' => $citacion->id,
+                'apoderado_nombre' => 'Apoderado QA actualizado',
+                'motivo' => 'administrativo',
+            ]);
+
+            $this->actingAs($usuarioEmisor)
+                ->delete(route('citaciones.destroy', $citacion))
+                ->assertRedirect(route('citaciones.index'));
+
+            $this->assertDatabaseMissing('citaciones', ['id' => $citacion->id]);
+        }
+    }
+
     // ── HU-05: Actas confidenciales ──
 
     public function test_convivencia_y_directora_cargan_actas_confidenciales_restringidas(): void
@@ -441,5 +617,22 @@ class Fase3QaTest extends TestCase
             ->assertRedirect(route('comunales.show', $reunion));
 
         $this->assertDatabaseMissing('compromisos_reuniones', ['id' => $compromiso->id]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    private function datosCitacionValidos(array $overrides = []): array
+    {
+        return array_replace([
+            'estudiante_nombre' => 'Estudiante QA',
+            'estudiante_run' => '55.555.555-5',
+            'apoderado_nombre' => 'Apoderado QA',
+            'funcionario_cita' => 'Funcionario QA',
+            'fecha' => '2026-11-10',
+            'hora' => '10:30',
+            'motivo' => 'conductual',
+        ], $overrides);
     }
 }

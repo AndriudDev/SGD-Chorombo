@@ -1,0 +1,8 @@
+EVIDENCIA QA PÚBLICA RESUMIDA — HU-04
+Fecha de registro: 2026-11-02
+Rama objetivo: qa/fase3-revision-20261102
+
+Alcance público: validaciones de formulario, restricciones de adjuntos, ciclo de almacenamiento, autorización por rol y operaciones CRUD permitidas.
+Resultado general de la revisión: siete escenarios aprobados y un hallazgo adicional derivado a gestión interna.
+
+La rama pública conserva únicamente las pruebas de regresión que no describen condiciones de explotación. Los detalles técnicos, pasos de reproducción y evidencia del hallazgo se mantienen fuera del repositorio para su tratamiento privado.
