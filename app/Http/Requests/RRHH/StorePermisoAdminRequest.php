@@ -18,10 +18,11 @@ class StorePermisoAdminRequest extends FormRequest
             'fecha_fin' => ['required', 'date', 'after_or_equal:fecha_inicio'],
             'tipo_jornada' => ['required', 'in:completa,media'],
             'motivo' => ['required', 'string'],
+            'archivo' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png,webp', 'max:15360'],
         ];
 
-        // Admin/Directora pueden crear permisos para otro usuario
-        if ($this->user()?->hasAnyRole(['directora', 'administracion'])) {
+        // Dirección, Administración e Inspectoría pueden crear permisos para otro usuario
+        if ($this->user()?->hasAnyRole(['directora', 'administracion', 'inspectoria'])) {
             $rules['user_id'] = ['required', 'integer', 'exists:users,id'];
         }
 
@@ -37,9 +38,12 @@ class StorePermisoAdminRequest extends FormRequest
             'tipo_jornada.required' => 'El tipo de jornada es obligatorio.',
             'tipo_jornada.in' => 'La jornada debe ser completa o media.',
             'motivo.required' => 'El motivo es obligatorio.',
+            'archivo.file' => 'Debe adjuntar un respaldo válido.',
+            'archivo.mimes' => 'Solo se permiten archivos PDF, Word o imágenes (JPG, PNG, WEBP).',
+            'archivo.max' => 'El archivo no debe superar los 15 MB.',
         ];
 
-        if ($this->user()?->hasAnyRole(['directora', 'administracion'])) {
+        if ($this->user()?->hasAnyRole(['directora', 'administracion', 'inspectoria'])) {
             $messages['user_id.required'] = 'Debe seleccionar el funcionario solicitante.';
             $messages['user_id.exists'] = 'El funcionario seleccionado no existe.';
         }

@@ -3,12 +3,20 @@
 @section('content')
     @php
         $user = Auth::user();
-        $esSupervisor = $user->hasAnyRole(['directora', 'administracion']);
+        $esSupervisor = $user->hasAnyRole(['directora', 'administracion', 'inspectoria']);
         $formatearDias = fn (float $dias): string => rtrim(rtrim(number_format($dias, 1, ',', '.'), '0'), ',');
     @endphp
 
     <div class="d-flex justify-content-between align-items-center sgd-page-header">
-        <h1 class="h3">Permisos Administrativos</h1>
+        <div class="d-flex align-items-center">
+            <h1 class="h3 mb-0 me-3">Permisos Administrativos</h1>
+            @if ($pendientesCount)
+                <span class="badge bg-warning text-dark fs-6" id="solicitudes-pendientes">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    {{ $pendientesCount }} solicitud{{ $pendientesCount > 1 ? 'es' : '' }} pendiente{{ $pendientesCount > 1 ? 's' : '' }}
+                </span>
+            @endif
+        </div>
         <a href="{{ route('permisos.create') }}" class="btn btn-primary">
             <i class="bi bi-plus-lg me-1"></i> Solicitar Permiso
         </a>
@@ -22,8 +30,13 @@
                 <div>
                     <strong>Días acumulados en el año:</strong>
                     <span class="display-number ms-2">{{ $formatearDias($diasAcumulados) }}</span>
+                    <span class="text-muted ms-3">
+                        <strong>Disponibles:</strong>
+                        {{ $formatearDias(max($cupo - $diasAcumulados, 0)) }}
+                        <small>(cupo anual {{ $cupo }})</small>
+                    </span>
                 </div>
-                @if ($diasAcumulados >= 10)
+                @if ($diasAcumulados >= $cupo)
                     <span class="badge bg-warning ms-3 fs-6">
                         <i class="bi bi-exclamation-triangle me-1"></i> Cerca del límite
                     </span>
@@ -46,6 +59,7 @@
                             <th>Días</th>
                             @if ($esSupervisor)
                                 <th>Acumulado año</th>
+                                <th>Disponibles</th>
                             @endif
                             <th>Estado</th>
                             <th class="text-end">Acciones</th>
@@ -67,6 +81,7 @@
                                 <td>{{ $formatearDias($permiso->diasSolicitados()) }}</td>
                                 @if ($esSupervisor)
                                     <td>{{ $formatearDias($acumuladosPorUsuario[$permiso->user_id] ?? 0) }}</td>
+                                    <td>{{ $formatearDias(max($cupo - ($acumuladosPorUsuario[$permiso->user_id] ?? 0), 0)) }}</td>
                                 @endif
                                 <td>
                                     @if ($permiso->estado === 'pendiente')
@@ -78,7 +93,16 @@
                                     @endif
                                 </td>
                                 <td class="text-end">
-                                    {{-- Editar/Eliminar — solo Dirección y Administración --}}
+                                    {{-- Respaldo adjunto — dueño o supervisores (HU-03) --}}
+                                    @if ($permiso->archivo)
+                                        <a href="{{ route('permisos.download', $permiso->id) }}"
+                                           class="btn btn-sm btn-outline-primary me-1"
+                                           title="Descargar respaldo">
+                                            <i class="bi bi-paperclip"></i>
+                                        </a>
+                                    @endif
+
+                                    {{-- Editar/Eliminar — Dirección, Administración e Inspectoría General --}}
                                     @if ($permiso->estado === 'pendiente' && $esSupervisor)
                                         <a href="{{ route('permisos.edit', $permiso->id) }}"
                                            class="btn btn-sm btn-outline-secondary me-1"
@@ -103,7 +127,7 @@
                                         </form>
                                     @endif
 
-                                    {{-- Aprobar/Rechazar — solo Dirección y Administración --}}
+                                    {{-- Aprobar/Rechazar — Dirección, Administración e Inspectoría General --}}
                                     @if ($permiso->estado === 'pendiente' && $esSupervisor)
                                         <form action="{{ route('permisos.aprobar', $permiso->id) }}"
                                               method="POST"
@@ -140,7 +164,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ $esSupervisor ? 8 : 7 }}" class="text-center text-muted py-4">
+                                <td colspan="{{ $esSupervisor ? 9 : 7 }}" class="text-center text-muted py-4">
                                     No hay solicitudes de permiso registradas.
                                 </td>
                             </tr>

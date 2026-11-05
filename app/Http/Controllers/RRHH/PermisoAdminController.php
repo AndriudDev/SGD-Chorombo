@@ -10,7 +10,9 @@ use App\Models\User;
 use App\Services\CorrespondenciaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PermisoAdminController extends Controller
 {
@@ -25,11 +27,12 @@ class PermisoAdminController extends Controller
     {
         $user = Auth::user();
         $year = request()->input('year', date('Y'));
+        $esSupervisor = $user->hasAnyRole(['directora', 'administracion', 'inspectoria']);
 
         $query = PermisoAdministrativo::with('user', 'aprobador');
 
         // Secretaría, UTP y Convivencia solo ven sus propios permisos
-        if (! $user->hasAnyRole(['directora', 'administracion'])) {
+        if (! $esSupervisor) {
             $query->where('user_id', $user->id);
         }
 
@@ -42,14 +45,20 @@ class PermisoAdminController extends Controller
 
         // Para supervisores: acumulado por funcionario visible en la tabla
         $acumuladosPorUsuario = [];
-        if ($user->hasAnyRole(['directora', 'administracion'])) {
+        if ($esSupervisor) {
             $userIds = collect($permisos->items())->pluck('user_id')->unique();
             foreach ($userIds as $uid) {
                 $acumuladosPorUsuario[$uid] = $this->correspondenciaService->calcularDiasAcumulados($uid, $year);
             }
         }
 
-        return view('permisos-administrativos.index', compact('permisos', 'diasAcumulados', 'acumuladosPorUsuario'));
+        // Indicador de solicitudes pendientes para perfiles autorizados (HU-03)
+        $pendientesCount = $esSupervisor
+            ? PermisoAdministrativo::where('estado', 'pendiente')->count()
+            : null;
+
+        return view('permisos-administrativos.index', compact('permisos', 'diasAcumulados', 'acumuladosPorUsuario', 'pendientesCount'))
+            ->with('cupo', PermisoAdministrativo::CUPO_ANUAL);
     }
 
     /**
@@ -58,7 +67,7 @@ class PermisoAdminController extends Controller
     public function create(): View
     {
         $users = null;
-        if (Auth::user()->hasAnyRole(['directora', 'administracion'])) {
+        if (Auth::user()->hasAnyRole(['directora', 'administracion', 'inspectoria'])) {
             $users = User::with('roles')->orderBy('name')->get();
         }
 
@@ -75,12 +84,12 @@ class PermisoAdminController extends Controller
     {
         $user = Auth::user();
 
-        // Admin/Directora pueden crear permisos para otro usuario
-        $userId = $user->hasAnyRole(['directora', 'administracion'])
+        // Admin/Directora/Inspectoría pueden crear permisos para otro usuario
+        $userId = $user->hasAnyRole(['directora', 'administracion', 'inspectoria'])
             ? $request->user_id
             : $user->id;
 
-        PermisoAdministrativo::create([
+        $permiso = PermisoAdministrativo::create([
             'user_id' => $userId,
             'fecha_inicio' => $request->fecha_inicio,
             'fecha_fin' => $request->fecha_fin,
@@ -89,6 +98,11 @@ class PermisoAdminController extends Controller
             'estado' => 'pendiente',
             'created_by' => $user->id,
         ]);
+
+        if ($request->hasFile('archivo')) {
+            $permiso->archivo = $this->correspondenciaService->subirRespaldoPermiso($request->file('archivo'), $permiso);
+            $permiso->save();
+        }
 
         return redirect()->route('permisos.index')
             ->with('success', 'Solicitud de permiso creada correctamente.');
@@ -100,7 +114,7 @@ class PermisoAdminController extends Controller
     public function edit(PermisoAdministrativo $permiso): View
     {
         $users = null;
-        if (Auth::user()->hasAnyRole(['directora', 'administracion'])) {
+        if (Auth::user()->hasAnyRole(['directora', 'administracion', 'inspectoria'])) {
             $users = User::with('roles')->orderBy('name')->get();
         }
 
@@ -123,9 +137,15 @@ class PermisoAdminController extends Controller
             'motivo' => $request->motivo,
         ]);
 
-        // Admin/Directora pueden cambiar el funcionario al editar
-        if (Auth::user()->hasAnyRole(['directora', 'administracion']) && $request->filled('user_id')) {
+        // Admin/Directora/Inspectoría pueden cambiar el funcionario al editar
+        if (Auth::user()->hasAnyRole(['directora', 'administracion', 'inspectoria']) && $request->filled('user_id')) {
             $permiso->update(['user_id' => $request->user_id]);
+        }
+
+        if ($request->hasFile('archivo')) {
+            $this->correspondenciaService->eliminarRespaldoPermiso($permiso);
+            $permiso->archivo = $this->correspondenciaService->subirRespaldoPermiso($request->file('archivo'), $permiso);
+            $permiso->save();
         }
 
         return redirect()->route('permisos.index')
@@ -141,10 +161,29 @@ class PermisoAdminController extends Controller
             return back()->with('error', 'No se puede eliminar un permiso ya procesado.');
         }
 
+        $this->correspondenciaService->eliminarRespaldoPermiso($permiso);
         $permiso->delete();
 
         return redirect()->route('permisos.index')
             ->with('success', 'Solicitud de permiso eliminada correctamente.');
+    }
+
+    /**
+     * Download the supporting document (respaldo) of a permiso.
+     * Supervisors (Dirección, Administración, Inspectoría) or the owner.
+     */
+    public function download(PermisoAdministrativo $permiso): StreamedResponse
+    {
+        $user = Auth::user();
+        if (! $user->hasAnyRole(['directora', 'administracion', 'inspectoria']) && $permiso->user_id !== $user->id) {
+            abort(403, 'No tienes permiso para descargar este respaldo.');
+        }
+
+        if (! $permiso->archivo || ! Storage::disk('public')->exists($permiso->archivo)) {
+            abort(404, 'El respaldo adjunto no está disponible.');
+        }
+
+        return Storage::disk('public')->download($permiso->archivo);
     }
 
     /**

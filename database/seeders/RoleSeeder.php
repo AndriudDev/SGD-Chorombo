@@ -14,15 +14,16 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         $roles = [
-            ['name' => 'directora', 'display_name' => 'Directora'],
+            ['name' => 'directora', 'display_name' => 'Dirección'],
             ['name' => 'administracion', 'display_name' => 'Administración'],
-            ['name' => 'secretaria', 'display_name' => 'Secretaria'],
-            ['name' => 'utp', 'display_name' => 'UTP'],
-            ['name' => 'convivencia', 'display_name' => 'Convivencia'],
+            ['name' => 'inspectoria', 'display_name' => 'Inspectoría General'],
+            ['name' => 'secretaria', 'display_name' => 'Secretaría de Dirección'],
+            ['name' => 'utp', 'display_name' => 'Coordinación Académica o Jefatura Técnica'],
+            ['name' => 'convivencia', 'display_name' => 'Convivencia Escolar'],
         ];
 
         foreach ($roles as $roleData) {
-            Role::firstOrCreate(['name' => $roleData['name']], $roleData);
+            Role::updateOrCreate(['name' => $roleData['name']], $roleData);
         }
 
         // Create admin user and assign administracion role
@@ -37,8 +38,9 @@ class RoleSeeder extends Seeder
         // Demo users for the remaining roles (same password: password)
         $demoUsers = [
             ['name' => 'Dirección Escolar', 'email' => 'directora@sgd-chorombo.cl', 'role' => 'directora'],
-            ['name' => 'Secretaría Escolar', 'email' => 'secretaria@sgd-chorombo.cl', 'role' => 'secretaria'],
-            ['name' => 'Jefatura UTP', 'email' => 'utp@sgd-chorombo.cl', 'role' => 'utp'],
+            ['name' => 'Inspectoría General', 'email' => 'inspectoria@sgd-chorombo.cl', 'role' => 'inspectoria'],
+            ['name' => 'Secretaría de Dirección', 'email' => 'secretaria@sgd-chorombo.cl', 'role' => 'secretaria'],
+            ['name' => 'Coordinación Académica', 'email' => 'utp@sgd-chorombo.cl', 'role' => 'utp'],
             ['name' => 'Convivencia Escolar', 'email' => 'convivencia@sgd-chorombo.cl', 'role' => 'convivencia'],
         ];
 

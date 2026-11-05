@@ -17,19 +17,25 @@
     <div class="d-flex" style="min-height: 100vh;">
         {{-- Sidebar institucional --}}
         <nav class="d-flex flex-column flex-shrink-0 p-3 sgd-sidebar">
-            <a href="{{ route('dashboard') }}"
-               class="d-flex align-items-center mb-3 text-decoration-none sidebar-brand">
-                <i class="bi bi-shield-fill-check me-2"></i>
-                {{ config('app.name', 'SGD-Chorombo') }}
-            </a>
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <a href="{{ route('dashboard') }}"
+                   class="d-flex align-items-center text-decoration-none sidebar-brand flex-grow-1 me-2">
+                    <i class="bi bi-shield-fill-check me-2"></i>
+                    <span class="sidebar-label">{{ config('app.name', 'SGD-Chorombo') }}</span>
+                </a>
+                <button type="button" class="sidebar-toggle" id="sgd-sidebar-toggle"
+                        title="Contraer menú" aria-label="Contraer menú" aria-expanded="true">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+            </div>
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
-                @if (auth()->user()->hasRole('administracion'))
+                @if (auth()->user()->hasAnyRole(['administracion', 'directora', 'inspectoria']))
                     <li class="nav-item">
                         <a href="{{ route('users.index') }}"
                            class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
                             <i class="bi bi-people-fill"></i>
-                            Usuarios
+                            <span class="sidebar-label">Usuarios</span>
                         </a>
                     </li>
                 @endif
@@ -37,14 +43,14 @@
                     <a href="{{ route('memos.index') }}"
                        class="nav-link {{ request()->routeIs('memos.*') ? 'active' : '' }}">
                         <i class="bi bi-file-text"></i>
-                        Memos y Oficios
+                        <span class="sidebar-label">Memos y Oficios</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="{{ route('citaciones.index') }}"
                        class="nav-link {{ request()->routeIs('citaciones.*') ? 'active' : '' }}">
                         <i class="bi bi-person-lines-fill"></i>
-                        Citaciones
+                        <span class="sidebar-label">Citaciones</span>
                     </a>
                 </li>
                 @if (auth()->user()->hasAnyRole(['convivencia', 'directora', 'utp']))
@@ -52,7 +58,7 @@
                         <a href="{{ route('actas.index') }}"
                            class="nav-link {{ request()->routeIs('actas.*') ? 'active' : '' }}">
                             <i class="bi bi-lock-fill"></i>
-                            Actas Confidenciales
+                            <span class="sidebar-label">Actas Confidenciales</span>
                         </a>
                     </li>
                 @endif
@@ -60,16 +66,16 @@
                     <a href="{{ route('comunales.index') }}"
                        class="nav-link {{ request()->routeIs('comunales.*') ? 'active' : '' }}">
                         <i class="bi bi-people"></i>
-                        Reuniones Comunales
+                        <span class="sidebar-label">Reuniones Comunales</span>
                     </a>
                 </li>
-                @if (auth()->user()->hasAnyRole(['administracion', 'directora', 'secretaria', 'utp', 'convivencia']))
+                @if (auth()->user()->hasAnyRole(['administracion', 'directora', 'inspectoria', 'secretaria', 'utp', 'convivencia']))
                     <li class="nav-item">
                         <a href="{{ route('permisos.index') }}"
                            class="nav-link {{ request()->routeIs('permisos.*') ? 'active' : '' }}">
                             <i class="bi bi-calendar-check"></i>
-                            Permisos Administrativos
-                            @if (auth()->user()->hasAnyRole(['administracion', 'directora'])
+                            <span class="sidebar-label">Permisos Administrativos</span>
+                            @if (auth()->user()->hasAnyRole(['administracion', 'directora', 'inspectoria'])
                                 && ($pendientes = \App\Models\PermisoAdministrativo::pendientes()->count()) > 0)
                                 <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill ms-auto">{{ $pendientes }}</span>
                             @endif
@@ -83,7 +89,7 @@
                    class="d-flex align-items-center text-white text-decoration-none dropdown-toggle sidebar-user"
                    data-bs-toggle="dropdown">
                     <i class="bi bi-person-circle me-2"></i>
-                    <strong>{{ auth()->user()->name ?? 'Usuario' }}</strong>
+                    <strong class="sidebar-label">{{ auth()->user()->name ?? 'Usuario' }}</strong>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
                     <li>
@@ -244,6 +250,38 @@
                 t.show();
             }
         }
+        // ── Sidebar colapsable (iconos) ──
+        (function() {
+            const sidebar = document.querySelector('.sgd-sidebar');
+            const toggle = document.getElementById('sgd-sidebar-toggle');
+            if (!sidebar || !toggle) return;
+
+            const toggleIcon = toggle.querySelector('i');
+            const labels = sidebar.querySelectorAll('.sidebar-label');
+
+            function apply(collapsed) {
+                sidebar.classList.toggle('sgd-collapsed', collapsed);
+                toggleIcon.className = collapsed ? 'bi bi-chevron-right' : 'bi bi-chevron-left';
+                toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                toggle.title = collapsed ? 'Expandir menú' : 'Contraer menú';
+                toggle.setAttribute('aria-label', toggle.title);
+                labels.forEach(function(label) {
+                    const link = label.closest('a');
+                    if (link) {
+                        link.title = collapsed ? label.textContent.trim() : '';
+                    }
+                });
+            }
+
+            // Por defecto ampliado; la preferencia del usuario persiste entre páginas
+            apply(localStorage.getItem('sgd-sidebar-collapsed') === '1');
+
+            toggle.addEventListener('click', function() {
+                const collapsed = !sidebar.classList.contains('sgd-collapsed');
+                apply(collapsed);
+                localStorage.setItem('sgd-sidebar-collapsed', collapsed ? '1' : '0');
+            });
+        })();
     </script>
     @stack('scripts')
 </body>

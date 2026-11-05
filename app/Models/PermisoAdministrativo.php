@@ -6,9 +6,15 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id', 'fecha_inicio', 'fecha_fin', 'tipo_jornada', 'motivo', 'estado', 'aprobado_por', 'created_by'])]
+#[Fillable(['user_id', 'fecha_inicio', 'fecha_fin', 'tipo_jornada', 'motivo', 'archivo', 'estado', 'aprobado_por', 'created_by'])]
 class PermisoAdministrativo extends Model
 {
+    /**
+     * Annual day quota per funcionario. Provisional value while the
+     * definitive quota is confirmed with Dirección (HU-03).
+     */
+    public const CUPO_ANUAL = 10;
+
     protected $table = 'permisos_administrativos';
 
     protected function casts(): array

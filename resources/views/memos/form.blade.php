@@ -22,22 +22,28 @@
                     @method('PUT')
                 @endif
 
-                {{-- Folio --}}
+                {{-- Folio: correlativo asignado por el sistema (HU-02) --}}
                 <div class="mb-3">
-                    <label for="folio" class="form-label">
-                        Folio
-                        <span class="required-asterisk">*</span>
-                    </label>
-                    <input type="text"
-                           class="form-control @error('folio') is-invalid @enderror"
-                           id="folio"
-                           name="folio"
-                           value="{{ old('folio', $isEdit ? $memo->folio : '') }}"
-                           placeholder="Ej: MEMO-2025-001"
-                           required>
-                    @error('folio')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
+                    <label for="folio" class="form-label">Folio</label>
+                    @if ($isEdit)
+                        <input type="text"
+                               class="form-control"
+                               id="folio"
+                               value="{{ $memo->folio }}"
+                               readonly>
+                        <div class="form-text">
+                            Correlativo secuencial asignado por el sistema. Se regenera si cambia el tipo o el año de la fecha.
+                        </div>
+                    @else
+                        <input type="text"
+                               class="form-control"
+                               id="folio"
+                               value="Se asigna automáticamente al guardar"
+                               disabled>
+                        <div class="form-text">
+                            Correlativo secuencial único por serie (memo/oficio) y año.
+                        </div>
+                    @endif
                 </div>
 
                 {{-- Tipo --}}
@@ -128,11 +134,11 @@
                            class="form-control @error('archivo') is-invalid @enderror"
                            id="archivo"
                            name="archivo"
-                           accept=".pdf,.doc,.docx">
+                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp">
                     @error('archivo')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
-                    <div class="form-text">Formatos permitidos: PDF, DOC, DOCX. Tamaño máximo: 15 MB.</div>
+                    <div class="form-text">Formatos permitidos: PDF, DOC, DOCX, JPG, JPEG, PNG, WEBP. Tamaño máximo: 15 MB.</div>
                 </div>
 
                 <hr>

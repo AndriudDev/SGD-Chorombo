@@ -15,13 +15,14 @@
     <div class="card shadow-sm">
         <div class="card-body">
             <form action="{{ $isEdit ? route('permisos.update', $permiso->id) : route('permisos.store') }}"
-                  method="POST">
+                  method="POST"
+                  enctype="multipart/form-data">
                 @csrf
                 @if ($isEdit)
                     @method('PUT')
                 @endif
 
-                {{-- Funcionario — solo visible para Dirección y Administración --}}
+                {{-- Funcionario — solo visible para Dirección, Administración e Inspectoría General --}}
                 @if ($users)
                     <div class="mb-3">
                         <label for="user_id" class="form-label">
@@ -114,6 +115,30 @@
                     @error('motivo')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
+                </div>
+
+                {{-- Respaldo documental (HU-03) --}}
+                <div class="mb-3">
+                    <label for="archivo" class="form-label">Respaldo documental</label>
+                    @if ($isEdit && $permiso->archivo)
+                        <div class="mb-2">
+                            <small class="text-muted">Respaldo actual:</small>
+                            <a href="{{ route('permisos.download', $permiso->id) }}"
+                               class="text-decoration-none ms-2">
+                                <i class="bi bi-file-earmark-text-fill me-1"></i>
+                                {{ basename($permiso->archivo) }}
+                            </a>
+                        </div>
+                    @endif
+                    <input type="file"
+                           class="form-control @error('archivo') is-invalid @enderror"
+                           id="archivo"
+                           name="archivo"
+                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp">
+                    @error('archivo')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                    <div class="form-text">Opcional. Formatos permitidos: PDF, DOC, DOCX, JPG, JPEG, PNG, WEBP. Tamaño máximo: 15 MB.</div>
                 </div>
 
                 <hr>

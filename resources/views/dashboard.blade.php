@@ -19,7 +19,7 @@
             {{-- Tarjetas de módulos --}}
             <div class="row g-4 justify-content-center">
 
-                @if (auth()->user()->hasRole('administracion'))
+                @if (auth()->user()->hasAnyRole(['administracion', 'directora', 'inspectoria']))
                     <div class="col-sm-6 col-lg-4 d-flex align-items-stretch">
                         <div class="card sgd-module-card border-0 h-100">
                             <div class="card-body d-flex flex-column align-items-center text-center py-5 px-4">
@@ -53,7 +53,7 @@
                     </div>
                 </div>
 
-                @if (auth()->user()->hasAnyRole(['administracion', 'directora']))
+                @if (auth()->user()->hasAnyRole(['administracion', 'directora', 'inspectoria']))
                     <div class="col-sm-6 col-lg-4 d-flex align-items-stretch">
                         <div class="card sgd-module-card border-0 h-100">
                             <div class="card-body d-flex flex-column align-items-center text-center py-5 px-4">

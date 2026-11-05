@@ -1,147 +1,206 @@
-# Documento de Requerimientos: Gestor Documental Institucional
+# Historias de Usuario Actualizadas
+**Versión de trabajo para implementación**  
+*Base: ocho historias originales y acuerdos de la reunión con Dirección, incorporando la aclaración de que se suben fotografías de actas y documentos cuando no es posible transcribirlos.*
 
 ---
 
-## 1. Información General del Proyecto
+## Objetivo y reglas comunes
 
-| Campo | Detalle |
+- **Objetivo principal:** Reducir tiempos de registro, búsqueda, consulta y recuperación documental; prioridad operativa: expedientes, protocolos y suspensiones de Convivencia Escolar.
+- **Usuarios previstos:** Seis personas (cinco del equipo de gestión y la secretaria de Dirección). Los cargos comunicados incluyen Dirección, Inspectoría General y Coordinación Académica/Jefatura Técnica.
+- **Acceso del equipo:** El equipo de gestión requiere acceso amplio, sujeto a excepciones expresas: UTP no accede a documentos confidenciales/reservados. Los permisos precisos de cada perfil aún requieren matriz validada.
+- **Soporte de formatos:** Soportar documentos digitales y también fotografías/imágenes de actas manuscritas, resúmenes de actas y otros documentos que no se transcriben por falta de tiempo. La lista exacta de extensiones y tamaños queda por precisar.
+- **Correlativos:** Los documentos y memos deben contar idealmente con correlativo automático desde el 2 de enero; reglas de serie, reinicio y coexistencia con archivos históricos por confirmar.
+- **Búsquedas:** Búsqueda por fecha, tema y/o referencia de archivo, combinable cuando corresponda, siempre respetando permisos.
+- **Conservación:** Se mencionó un máximo de cinco años y recuperación de eliminados el mayor tiempo posible. Debe conciliarse antes de fijar reglas de eliminación definitiva.
+
+---
+
+## Lectura rápida de cambios frente a la versión inicial
+
+| Historia | Cambio o precisión principal |
 | :--- | :--- |
-| **Institución Educacional:** | Escuela Básica G733 Chorombo Bajo |
-| **Comuna:** | María Pinto |
-| **Representante:** | Patricia Gajardo Órdenes |
-| **Cargo del Representante:** | Directora |
-| **Área:** | Educación |
-| **Email:** | pgajardo@corpmpinto.cl |
-| **Teléfono:** | +56 9 5446 8858 |
-| **Contexto Académico:** | Clínica Tecnológica - Instituto Profesional San Sebastián |
+| **HU-01** | Creación de usuarios: Directora e Inspector General; revisión de perfiles reales. |
+| **HU-02** | Correlativos automáticos y carga de documentos / fotografías. |
+| **HU-03** | Inspectoría General y saldo de días disponibles. |
+| **HU-04** | Mantener citaciones; considerar su vínculo con expedientes de Convivencia. |
+| **HU-05** | Sin acceso UTP; Dirección numera y marca como reservado. |
+| **HU-06** | Prioridad menor; permitir imagen/fotografía de acta manuscrita. |
+| **HU-07** | Filtros por fecha, tema y referencia de archivo. |
+| **HU-08** | Eliminación por Directora/Inspectoría; papelera y retención por definir. |
 
 ---
 
-## 2. Introducción y Contexto
+## Especificación de Historias de Usuario
 
-En el contexto actual de la gestión escolar, los equipos directivos enfrentan una alta carga de requerimientos administrativos, normativos y pedagógicos provenientes tanto de la comunidad educativa interna como de entidades externas (DAEM, Servicios Locales de Educación Pública - SLEP, y Superintendencia de Educación). 
+### HU-01 · Usuarios, cargos y permisos
+> **Historia de usuario:** Como Directora o Inspector General, necesito crear y administrar cuentas y asignar accesos según el cargo, para que las seis personas autorizadas utilicen el gestor con permisos adecuados.
 
-La adecuada trazabilidad, resguardo y acceso oportuno a la documentación institucional (memos, oficios, permisos administrativos, acuerdos de convivencia y actas comunales) resulta crítica para garantizar la continuidad operativa, el cumplimiento normativo y la toma de decisiones informada.
+#### Requisitos para implementación
+- Permitir crear cuentas y gestionar accesos a Dirección e Inspectoría General.
+- Representar los cargos/funciones efectivamente usados: Dirección, Inspectoría General, Coordinación Académica o Jefatura Técnica, Convivencia Escolar y Secretaría de Dirección; validar perfiles adicionales si corresponden.
+- Distinguir permisos de consulta, carga, edición, descarga, eliminación y administración según el área y el nivel de reserva.
+- Inspectoría General gestiona documentación de contratos, horarios y permisos administrativos; Coordinación Académica, documentación académica; Convivencia Escolar, expedientes, protocolos y suspensiones.
+- Restringir expresamente los documentos confidenciales/reservados según **HU-05**.
 
----
+#### Criterios de aceptación verificables
+- Solo una cuenta autorizada para administrar usuarios puede crear usuarios y asignar perfiles.
+- Cada perfil muestra y permite únicamente acciones autorizadas; una petición directa sin permiso también debe bloquearse.
+- UTP no puede visualizar ni descargar documentos reservados.
 
-## 3. Alcance y Perfiles de Acceso (Modelo RBAC)
-
-La solución contempla la parametrización de roles diferenciados bajo un modelo de **Control de Acceso Basado en Roles (RBAC)**, asegurando pertinencia funcional y privacidad:
-
-* **Dirección:** Supervisión transversal, aprobación institucional y acceso total al acervo documental.
-* **Administración:** Gestión operativa de permisos administrativos, soporte técnico y mantenimiento de la plataforma.
-* **Secretaría:** Registro correlativo, foliación y carga de correspondencia oficial (memos y oficios) y citaciones.
-* **Jefatura de UTP:** Centralización de minutas comunales, documentos técnico-pedagógicos y directrices curriculares.
-* **Convivencia Escolar:** Registro confidencial de citaciones, entrevistas y acuerdos suscritos con apoderados.
-
----
-
-## 4. Historias de Usuario (HU)
-
-### Épica 1: Autenticación y Control de Accesos por Rol (RBAC)
-
-#### **HU-01: Gestión de perfiles y permisos diferenciados**
-* **Como:** Administrador de la plataforma,
-* **Quiero:** Asignar y gestionar roles específicos (Directora, Administrador, Secretaria, Jefe de UTP, Convivencia Escolar),
-* **Para:** Asegurar que cada integrante del equipo directivo acceda únicamente a la documentación y acciones pertinentes a su función.
-
-**Criterios de Aceptación:**
-* El sistema permite crear usuarios y asociarlos a uno de los 5 roles definidos.
-* **Directora:** Acceso total de lectura, descarga, aprobación y supervisión de todos los módulos.
-* **Secretaria:** Permisos de carga, edición, foliación/registro y emisión de memos, oficios y citaciones.
-* **Convivencia Escolar:** Carga y lectura restringida a actas de acuerdos de apoderados, citaciones y casos de convivencia.
-* **Jefe de UTP:** Acceso a documentos pedagógicos, reuniones comunales técnicas y memos/oficios generales.
-* **Administrador:** Gestión técnica, respaldo, configuración y asignación de usuarios.
+> ⚠️ **Por confirmar antes de implementar:** Confirmar lista definitiva de seis personas y correspondencia cargo $\leftrightarrow$ rol (las funciones originales diferían). Definir acceso concreto de Secretaría, Convivencia y administración técnica a cada módulo.
 
 ---
 
-### Épica 2: Gestión Documental Institucional (Memos, Oficios y Permisos)
+### HU-02 · Memos, oficios y documentación oficial
+> **Historia de usuario:** Como Secretaría o persona autorizada, necesito registrar correspondencia y archivos con numeración automática para localizarlos rápidamente sin foliación manual.
 
-#### **HU-02: Carga, catalogación y foliación de Memos y Oficios**
-* **Como:** Secretaria (o miembro autorizado del equipo directivo),
-* **Quiero:** Registrar y subir memos u oficios (PDF/Word) indicando número de folio, fecha, destinatario, emisor y materia,
-* **Para:** Mantener centralizada y digitalizada la correspondencia oficial interna y externa del establecimiento.
+#### Requisitos para implementación
+- Conservar tipo memo/oficio, fecha, destinatario, emisor y asunto o materia de la historia original.
+- Generar idealmente folio o correlativo único y secuencial por el sistema desde el 2 de enero, conforme a reglas acordadas de numeración.
+- Permitir adjuntar documentos digitales de texto y fotografías/imágenes de actas, resúmenes u otros documentos no transcritos.
+- Guardar los archivos asociados a su registro y permitir búsquedas y consultas por perfiles autorizados.
+- Impedir colisiones del correlativo según la serie y el período que se definan.
 
-**Criterios de Aceptación:**
-* Dado que la Secretaria está en el módulo de correspondencia oficial, cuando completa el formulario ($N^{\circ}$ correlativo/folio, Tipo: Memo/Oficio, Fecha, Destinatario, Asunto) y adjunta el archivo (máx. 15 MB), entonces el documento queda almacenado, indexado y visible para los roles con permisos de lectura.
-* El sistema alerta si se intenta duplicar un número de correlativo/folio en el mismo año escolar.
+#### Criterios de aceptación verificables
+- Al crear dos documentos consecutivos dentro de la misma serie, cada uno recibe folio diferente y ordenado.
+- Los registros y archivos permitidos se guardan, consultan y descargan según autorización.
+- La búsqueda recupera un documento por fecha, tema o referencia sin mostrar documentos prohibidos.
 
-#### **HU-03: Solicitud y registro de Permisos Administrativos**
-* **Como:** Integrante del equipo directivo,
-* **Quiero:** Cargar o solicitar permisos administrativos adjuntando el formulario o respaldo firmado,
-* **Para:** Que la Dirección y Administración lleven el control formal de días utilizados y disponibilidad del personal.
-
-**Criterios de Aceptación:**
-* Permite ingresar fecha de inicio, fecha de término, número de días o medias jornadas solicitadas.
-* Incluye estado del documento: `Pendiente de V°B°`, `Aprobado`, `Rechazado`.
-* La Directora y el Administrador reciben notificación interna o alerta visual sobre solicitudes pendientes.
-* Muestra un resumen acumulado de días tomados por funcionario/a durante el año.
+> ⚠️ **Por confirmar antes de implementar:** Precisar si la numeración comienza cada 2 de enero y se reinicia anualmente; si existe una serie por tipo. Confirmar formatos y tamaño máximo: la ficha original proponía PDF/Word hasta 15 MB, pero la reunión agregó fotografías.
 
 ---
 
-### Épica 3: Gestión de Convivencia y Apoderados (Citaciones y Acuerdos)
+### HU-03 · Permisos administrativos y saldo disponible
+> **Historia de usuario:** Como Inspectoría General, necesito registrar y controlar permisos administrativos y visualizar los días que le quedan a cada funcionario, para gestionar solicitudes con rapidez.
 
-#### **HU-04: Emisión y seguimiento de Citaciones a Apoderados**
-* **Como:** Encargado/a de Convivencia Escolar o Secretaria,
-* **Quiero:** Generar y registrar citaciones formales a apoderados con fecha, hora, motivo y estudiante asociado,
-* **Para:** Llevar una trazabilidad rigurosa frente a requerimientos normativos o seguimiento de casos.
+#### Requisitos para implementación
+- Registrar funcionario, fecha de inicio y término, días completos o medias jornadas, y respaldo documental cuando corresponda.
+- Conservar estados *Pendiente de V°B°*, *Aprobado* y *Rechazado* de la historia original.
+- Mostrar por funcionario días usados y días disponibles/restantes en el período correspondiente.
+- Mantener alerta o indicador de solicitudes pendientes para los perfiles autorizados.
+- Inspectoría General es responsable operativa de contratos, horarios y permisos administrativos; Dirección accede según la matriz aprobada.
 
-**Criterios de Aceptación:**
-* Formulario con campos clave: RUN/Nombre del estudiante, Nombre del apoderado, Funcionario que cita, Fecha/Hora citación, Motivo (Conductual, Pedagógico, Administrativo).
-* Posibilidad de adjuntar copia de la citación firmada o colilla de recepción.
-* Estado de la citación: `Programada`, `Asistió`, `No asistió / Justificada`, `Reprogramada`.
+#### Criterios de aceptación verificables
+- Una solicitud aprobada actualiza el cálculo de días usados y restantes conforme a la política definida.
+- Una solicitud pendiente o rechazada no descuenta días salvo regla expresamente definida.
+- Las personas con permiso pueden consultar estado y saldo; otros perfiles no pueden aprobar o alterar solicitudes.
 
-#### **HU-05: Carga y resguardo confidencial de Acuerdos y Compromisos de Apoderados**
-* **Como:** Encargado/a de Convivencia Escolar o Directora,
-* **Quiero:** Subir las actas de compromisos y acuerdos firmados en entrevistas con apoderados,
-* **Para:** Contar con respaldo legal y pedagógico en caso de seguimiento o fiscalizaciones, protegiendo datos sensibles.
-
-**Criterios de Aceptación:**
-* Documentos categorizados como Confidencial/Sensible.
-* Acceso de lectura estrictamente restringido a: Convivencia Escolar y Dirección (opcionalmente UTP si el compromiso es pedagógico).
-* Búsqueda rápida por nombre o RUN del estudiante.
+> ⚠️ **Por confirmar antes de implementar:** Definir cupo inicial anual, reglas de media jornada, recálculo al editar/rechazar y quién autoriza cada solicitud. Determinar si contratos y horarios requieren módulos separados o solo clasificación documental.
 
 ---
 
-### Épica 4: Archivo de Reuniones Comunales e Interinstitucionales
+### HU-04 · Citaciones a apoderados
+> **Historia de usuario:** Como personal autorizado de Secretaría o Convivencia Escolar, necesito registrar y seguir citaciones para mantener antecedentes organizados y localizar cada caso.
 
-#### **HU-06: Repositorio de Documentos de Reuniones Comunales (DAEM / SLEP / Redes)**
-* **Como:** Jefe/a de UTP o Directora,
-* **Quiero:** Cargar minutas, orientaciones técnicas y presentaciones de las reuniones comunales o de microcentro,
-* **Para:** Que todo el equipo directivo esté alineado con las directrices comunales y plazos exigidos.
+#### Requisitos para implementación
+- Mantener campos originales: estudiante y RUN, apoderado, funcionario que cita, fecha, hora y motivo (*Conductual/Pedagógico/Administrativo*).
+- Permitir adjuntar el respaldo de citación, colilla firmada o fotografía del documento, según formatos autorizados.
+- Mantener estados *Programada*, *Asistió*, *No asistió/Justificada* y *Reprogramada*, sujetos a precisión del flujo.
+- Permitir asociar o referenciar la citación con antecedentes de Convivencia Escolar si se define un expediente común.
 
-**Criterios de Aceptación:**
-* Permite categorizar por: Red de UTP, Reunión de Directores, Mesa Comunal de Convivencia, DAEM/SLEP General.
-* Permite registrar compromisos acordados y fecha límite de entrega institucional.
-* Todos los roles directivos pueden consultar y descargar este material.
+#### Criterios de aceptación verificables
+- Un usuario autorizado registra y localiza la citación; otro sin autorización no puede modificarla.
+- El estado y los adjuntos se reflejan correctamente al consultar el registro.
+- La consulta respeta los límites de acceso documental.
 
----
-
-### Épica 5: Búsqueda, Auditoría y Trazabilidad
-
-#### **HU-07: Buscador avanzado y filtros multinivel**
-* **Como:** Integrante del equipo directivo,
-* **Quiero:** Filtrar los documentos por tipo, fecha, remitente, estudiante o palabra clave,
-* **Para:** Localizar antecedentes de forma inmediata durante reuniones, auditorías o fiscalizaciones de la Superintendencia.
-
-**Criterios de Aceptación:**
-* Filtros disponibles: Tipo de documento (Memo, Oficio, Acta, Citación, etc.), Rango de fechas, Rol emisor, Estado.
-* Barra de búsqueda de texto rápido por título o palabras clave del asunto.
-
-#### **HU-08: Registro de actividad y bitácora de auditoría**
-* **Como:** Administrador o Directora,
-* **Quiero:** Visualizar un historial de quién subió, editó, descargó o eliminó un documento,
-* **Para:** Garantizar la integridad y trazabilidad legal de la información del establecimiento.
-
-**Criterios de Aceptación:**
-* El sistema guarda automáticamente: Usuario, Acción realizada, ID/Nombre del documento y Marca de tiempo (fecha y hora exacta).
-* Los documentos eliminados requieren confirmación y quedan archivados en una "Papelera de reciclaje / Auditoría" accesible solo por el Administrador.
+> ⚠️ **Por confirmar antes de implementar:** Definir si Convivencia tendrá expediente integral que agrupe citaciones, protocolos y suspensiones. Precisar reglas de reprogramación, historial y estados de asistencia.
 
 ---
 
-## 5. Dependencias y Consideraciones Técnicas
+### HU-05 · Documentos confidenciales y reservados
+> **Historia de usuario:** Como Directora, necesito clasificar y numerar documentación reservada, para proteger actas y antecedentes sensibles y controlar quién puede consultarlos.
 
-* **Stack de Desarrollo:** Laravel + PHP + MySQL.
+#### Requisitos para implementación
+- Permitir adjuntar actas/acuerdos y otros antecedentes de carácter confidencial o sensible.
+- Dirección asigna numeración y clasificación de reserva a los archivos correspondientes.
+- UTP/Coordinación Académica no tiene acceso a los documentos confidenciales o reservados, incluso si su contenido es pedagógico.
+- Aplicar permisos tanto en listados y búsquedas como en descargas y consultas directas.
+- Asegurar que los archivos no se expongan por enlaces públicos que eviten la autorización del sistema.
+
+#### Criterios de aceptación verificables
+- Un perfil no autorizado no puede encontrar, abrir ni descargar documentos reservados mediante ninguna ruta.
+- Dirección registra y consulta la clasificación y numeración reservada.
+- Las consultas por nombre/RUN, si se habilitan, no revelan documentos a perfiles no autorizados.
+
+> ⚠️ **Por confirmar antes de implementar:** Precisar quiénes, además de Dirección, pueden acceder a reservados; la indicación explícita es que UTP no puede. Definir numeración reservada, política de conservación y auditoría de acceso.
 
 ---
+
+### HU-06 · Reuniones comunales y actas
+> **Historia de usuario:** Como Directora, necesito cargar fotografías de actas manuscritas y otros documentos de reuniones comunales para conservarlos sin necesidad de transcribirlos.
+
+#### Requisitos para implementación
+- Permitir registrar reunión, fecha, tema y, cuando exista, fotografía o imagen del acta manuscrita.
+- Conservar las categorías originales si el equipo confirma su utilidad: *Red de UTP*, *Reunión de Directores*, *Mesa Comunal de Convivencia* y *DAEM/SLEP General*.
+- Mantener búsqueda y descarga por usuarios autorizados.
+- Registrar compromisos y plazos cuando se documenten; no presuponer que todas las reuniones requieren seguimiento complejo.
+- Considerar el módulo de prioridad operativa menor, según la directora: reuniones con otros directores y poca incidencia diaria.
+
+#### Criterios de aceptación verificables
+- La Directora puede incorporar una imagen de acta y recuperarla posteriormente.
+- La reunión se localiza por fecha, tema o referencia, respetando permisos.
+- Compromisos y fechas, cuando se registran, quedan asociados a la reunión correcta.
+
+> ⚠️ **Por confirmar antes de implementar:** Precisar si solo Dirección puede cargar/editar o si UTP también participa en este módulo. Confirmar si se mantienen obligatoriamente las cuatro categorías y el seguimiento de compromisos.
+
+---
+
+### HU-07 · Búsqueda y filtros documentales
+> **Historia de usuario:** Como integrante autorizado del equipo de gestión, necesito encontrar documentos por fecha, tema o referencia para ahorrar tiempo durante la gestión cotidiana.
+
+#### Requisitos para implementación
+- Incorporar filtros por fecha (o rango), tema/asunto y referencia/folio/identificador de archivo.
+- Permitir utilizar uno o varios filtros de forma combinada.
+- Conservar las búsquedas originales por título, palabras clave, tipo, emisor o estado cuando sean aplicables al módulo.
+- Aplicar siempre los permisos: la búsqueda no revela documentación confidencial o reservada a perfiles excluidos.
+
+#### Criterios de aceptación verificables
+- Los resultados corresponden a los filtros aplicados y muestran la referencia que permite identificar el archivo.
+- La combinación de filtros restringe los resultados de forma coherente.
+- Un perfil sin acceso no recibe coincidencias, nombres ni referencias de documentos reservados.
+
+> ⚠️ **Por confirmar antes de implementar:** Definir qué significa exactamente “referencia de archivo” (folio, código interno, nombre o todos). Precisar si la búsqueda será global o separada por módulo.
+
+---
+
+### HU-08 · Auditoría, eliminación y papelera
+> **Historia de usuario:** Como Directora o Inspector General, necesito controlar eliminaciones y recuperar documentos borrados por error, manteniendo la trazabilidad de la información.
+
+#### Requisitos para implementación
+- Restringir la eliminación directa de documentos a Dirección e Inspectoría General.
+- Solicitar confirmación antes de eliminar y mantener una papelera que permita recuperación autorizada.
+- Registrar cargas, ediciones, descargas y eliminaciones con usuario, documento y fecha/hora, conforme a la historia original.
+- Mantener documentos eliminados recuperables el mayor tiempo posible dentro de la política de conservación que se acuerde.
+- Considerar la indicación de máximo cinco años de conservación documental, sin fijar borrado automático hasta resolver su alcance.
+
+#### Criterios de aceptación verificables
+- Perfiles distintos de Dirección e Inspectoría no pueden eliminar documentos ni directamente mediante URL.
+- Un documento enviado a papelera deja de aparecer como activo y puede recuperarse por usuario autorizado.
+- La auditoría identifica quién realizó la acción y cuándo.
+
+> ⚠️ **Por confirmar antes de implementar:** Aclarar contradicción entre “máximo cinco años” y “papelera el mayor tiempo posible”: inicio del cómputo, excepciones y borrado definitivo. Definir quién puede restaurar, vaciar papelera y consultar la auditoría.
+
+---
+
+## Prioridad funcional: Convivencia Escolar
+
+La directora señaló como necesidad prioritaria sistematizar expedientes, protocolos y suspensiones, de modo que el área sea más operativa y reduzca tiempos. Esta necesidad no está completamente descrita en las ocho historias originales.
+
+**Decisión pendiente para el equipo:** Definir si se amplían `HU-04` / `HU-05` o se incorpora una historia adicional específica para el expediente de Convivencia Escolar, con flujo, campos, permisos y criterios de aceptación propios. No debe asumirse su alcance sin validación.
+
+---
+
+## Validaciones necesarias antes de implementar
+
+1. **Matriz de permisos:** Confirmar matriz definitiva de seis usuarios, perfiles y acceso a cada área; resolver acceso amplio del equipo frente a documentos reservados.
+2. **Correlativos:** Precisar correlativos automáticos: fecha de inicio (2 de enero), reinicios, series y administración de documentos históricos.
+3. **Formatos:** Confirmar formatos digitales admitidos, fotografías de actas y tamaños máximos; mantener la carga simple para evitar transcripciones.
+4. **Permisos administrativos:** Definir cupo, descuentos y reglas de días disponibles de permisos administrativos.
+5. **Convivencia Escolar:** Definir flujo mínimo de expedientes, protocolos y suspensiones de Convivencia Escolar, como prioridad de la escuela.
+6. **Conservación:** Resolver conservación de hasta cinco años y recuperación en papelera “el mayor tiempo posible”.
+7. **Baja prioridad:** Acordar qué funcionalidades de reuniones comunales se mantienen por su baja prioridad operativa.
+
+---
+
+> **Control de cambios:** Versión editable de requisitos para compartir con el desarrollador. No constituye autorización para interpretar libremente las decisiones que figuran pendientes.

@@ -71,4 +71,26 @@ class RoleAccessTest extends TestCase
             ->get('/admin/users')
             ->assertOk();
     }
+
+    public function test_directora_e_inspectoria_pueden_administrar_usuarios(): void
+    {
+        foreach (['directora', 'inspectoria'] as $roleName) {
+            $user = $this->createUserWithRole($roleName);
+
+            $this->actingAs($user)
+                ->get('/admin/users')
+                ->assertOk();
+        }
+    }
+
+    public function test_resto_de_roles_no_puede_administrar_usuarios(): void
+    {
+        foreach (['secretaria', 'utp', 'convivencia'] as $roleName) {
+            $user = $this->createUserWithRole($roleName);
+
+            $this->actingAs($user)
+                ->get('/admin/users')
+                ->assertForbidden();
+        }
+    }
 }

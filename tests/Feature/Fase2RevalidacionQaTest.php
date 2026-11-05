@@ -72,6 +72,45 @@ class Fase2RevalidacionQaTest extends TestCase
         $response->assertSee('Departamento Provincial');
     }
 
+    public function test_hu02_03_filtra_memos_por_fecha_tipo_y_busqueda(): void
+    {
+        $secretaria = $this->userWithRole('secretaria', 'Secretaría');
+        Memo::create([
+            'folio' => 'MEM-FILTRO-01',
+            'tipo' => 'memo',
+            'fecha' => '2026-11-04',
+            'destinatario' => 'Destinatario Filtro Fecha QA',
+            'asunto' => 'Asunto filtro fecha QA',
+            'user_id' => $secretaria->id,
+        ]);
+        Memo::create([
+            'folio' => 'OFI-FILTRO-02',
+            'tipo' => 'oficio',
+            'fecha' => '2026-11-05',
+            'destinatario' => 'Destinatario Filtro Tipo QA',
+            'asunto' => 'Asunto filtro tipo QA',
+            'user_id' => $secretaria->id,
+        ]);
+
+        $this->actingAs($secretaria)
+            ->get(route('memos.index', ['fecha' => '2026-11-04']))
+            ->assertOk()
+            ->assertSee('MEM-FILTRO-01')
+            ->assertDontSee('OFI-FILTRO-02');
+
+        $this->actingAs($secretaria)
+            ->get(route('memos.index', ['tipo' => 'oficio']))
+            ->assertOk()
+            ->assertSee('OFI-FILTRO-02')
+            ->assertDontSee('MEM-FILTRO-01');
+
+        $this->actingAs($secretaria)
+            ->get(route('memos.index', ['search' => 'Destinatario Filtro Fecha QA']))
+            ->assertOk()
+            ->assertSee('MEM-FILTRO-01')
+            ->assertDontSee('OFI-FILTRO-02');
+    }
+
     public function test_hu03_01_registra_permiso_de_dia_completo_como_pendiente(): void
     {
         $funcionario = $this->userWithRole('secretaria', 'Secretaría');

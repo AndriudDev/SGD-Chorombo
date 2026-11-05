@@ -41,6 +41,7 @@ body {
     background-color: var(--sgd-sidebar-bg);
     color: #fff;
     border-right: 1px solid rgba(255, 255, 255, 0.04);
+    transition: width 0.2s ease;
 }
 
 .sgd-sidebar .nav-link {
@@ -84,6 +85,48 @@ body {
 
 .sgd-sidebar .sidebar-user {
     font-size: 0.85rem;
+}
+
+/* --- Sidebar colapsado (solo iconos) --- */
+.sidebar-toggle {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.sidebar-toggle:hover {
+    color: #fff;
+}
+
+@media (min-width: 769px) {
+    .sgd-sidebar.sgd-collapsed {
+        width: 76px;
+    }
+
+    .sgd-sidebar.sgd-collapsed .sidebar-label,
+    .sgd-sidebar.sgd-collapsed .badge {
+        display: none;
+    }
+
+    .sgd-sidebar.sgd-collapsed .nav-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.65rem 0.5rem;
+    }
+
+    .sgd-sidebar.sgd-collapsed .sidebar-user {
+        justify-content: center;
+    }
+
+    .sgd-sidebar.sgd-collapsed .sidebar-user .bi {
+        margin-right: 0;
+    }
 }
 
 /* --- Top navbar --- */
@@ -473,6 +516,10 @@ body {
     .sgd-sidebar {
         width: 100%;
         min-height: auto;
+    }
+
+    .sidebar-toggle {
+        display: none;
     }
 }
 

@@ -20,7 +20,15 @@
                         <option value="oficio" {{ request()->input('tipo') === 'oficio' ? 'selected' : '' }}>Oficio</option>
                     </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-3">
+                    <label for="fecha" class="form-label">Fecha</label>
+                    <input type="date"
+                           class="form-control"
+                           id="fecha"
+                           name="fecha"
+                           value="{{ request()->input('fecha', '') }}">
+                </div>
+                <div class="col-md-3">
                     <label for="search" class="form-label">Buscar</label>
                     <input type="text"
                            class="form-control"

@@ -29,6 +29,9 @@ class MemoController extends Controller
         if ($tipo = request()->input('tipo')) {
             $query->byTipo($tipo);
         }
+        if ($fecha = request()->input('fecha')) {
+            $query->byFecha($fecha);
+        }
         if ($search = request()->input('search')) {
             $query->search($search);
         }
@@ -51,17 +54,17 @@ class MemoController extends Controller
      */
     public function store(StoreMemoRequest $request): RedirectResponse
     {
-        // Validate folio uniqueness
-        $errors = $this->correspondenciaService->validarFolioUnico(
-            $request->folio,
-            $request->date('fecha')?->year,
-        );
+        // Sequential folio assigned by the system per serie and period (HU-02)
+        $year = $request->date('fecha')?->year ?? date('Y');
+        $folio = $this->correspondenciaService->siguienteFolio($request->tipo, $year);
+
+        $errors = $this->correspondenciaService->validarFolioUnico($folio, $request->tipo, $year);
         if ($errors) {
             return back()->withErrors($errors);
         }
 
         $memo = Memo::create([
-            'folio' => $request->folio,
+            'folio' => $folio,
             'tipo' => $request->tipo,
             'fecha' => $request->fecha,
             'destinatario' => $request->destinatario,
@@ -111,23 +114,33 @@ class MemoController extends Controller
             abort(403, 'No tienes permiso para modificar este memo.');
         }
 
-        // Validate folio uniqueness excluding current memo
-        $errors = $this->correspondenciaService->validarFolioUnico(
-            $request->folio,
-            $request->date('fecha')?->year,
-            $memo->id,
-        );
-        if ($errors) {
-            return back()->withErrors($errors);
-        }
+        $year = $request->date('fecha')?->year ?? date('Y');
 
-        $memo->update([
-            'folio' => $request->folio,
+        $datos = [
             'tipo' => $request->tipo,
             'fecha' => $request->fecha,
             'destinatario' => $request->destinatario,
             'asunto' => $request->asunto,
-        ]);
+        ];
+
+        // The folio belongs to a serie and period: reassign when either changes (HU-02)
+        if ($memo->tipo !== $request->tipo || $memo->fecha->year !== $year) {
+            $folio = $this->correspondenciaService->siguienteFolio($request->tipo, $year);
+
+            $errors = $this->correspondenciaService->validarFolioUnico(
+                $folio,
+                $request->tipo,
+                $year,
+                $memo->id,
+            );
+            if ($errors) {
+                return back()->withErrors($errors);
+            }
+
+            $datos['folio'] = $folio;
+        }
+
+        $memo->update($datos);
 
         if ($request->hasFile('archivo')) {
             // Delete old file if exists

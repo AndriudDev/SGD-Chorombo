@@ -26,8 +26,8 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-// Admin panel — solo rol administración
-Route::middleware(['auth', 'role:administracion'])->prefix('admin')->group(function () {
+// Admin panel — administración, Dirección e Inspectoría General (HU-01)
+Route::middleware(['auth', 'role:administracion|directora|inspectoria'])->prefix('admin')->group(function () {
     Route::get('/', fn () => redirect()->route('users.index'))->name('admin.index');
 
     Route::resource('users', UserController::class)->except('show');
@@ -45,15 +45,16 @@ Route::middleware('auth')->prefix('correspondencia')->group(function () {
     Route::get('memos/{memo}/download', [MemoController::class, 'download'])->name('memos.download');
 });
 
-// Permisos Administrativos — todo el equipo directivo (HU-03)
-Route::middleware(['auth', 'role:administracion|directora|secretaria|utp|convivencia'])->group(function () {
+// Permisos Administrativos — todo el equipo directivo, incluida Inspectoría General (HU-03)
+Route::middleware(['auth', 'role:administracion|directora|inspectoria|secretaria|utp|convivencia'])->group(function () {
     Route::get('permisos-administrativos', [PermisoAdminController::class, 'index'])->name('permisos.index');
     Route::get('permisos-administrativos/create', [PermisoAdminController::class, 'create'])->name('permisos.create');
     Route::post('permisos-administrativos', [PermisoAdminController::class, 'store'])->name('permisos.store');
+    Route::get('permisos-administrativos/{permiso}/download', [PermisoAdminController::class, 'download'])->name('permisos.download');
 });
 
-// Editar/Eliminar + Aprobar/Rechazar — solo Dirección y Administración
-Route::middleware(['auth', 'role:administracion|directora'])->group(function () {
+// Editar/Eliminar + Aprobar/Rechazar — Dirección, Administración e Inspectoría General
+Route::middleware(['auth', 'role:administracion|directora|inspectoria'])->group(function () {
     Route::get('permisos-administrativos/{permiso}/edit', [PermisoAdminController::class, 'edit'])->name('permisos.edit');
     Route::put('permisos-administrativos/{permiso}', [PermisoAdminController::class, 'update'])->name('permisos.update');
     Route::delete('permisos-administrativos/{permiso}', [PermisoAdminController::class, 'destroy'])->name('permisos.destroy');

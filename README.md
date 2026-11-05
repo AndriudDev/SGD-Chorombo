@@ -10,70 +10,78 @@
 
 ## Control de Acceso (RBAC)
 
-El sistema gestiona 5 perfiles con permisos estrictos mediante middlewares y policies de Laravel:
+El sistema gestiona 6 perfiles con permisos estrictos mediante middlewares y policies de Laravel:
 
 | Perfil | Permisos |
 |---|---|
-| **Directora** | Acceso transversal total: lectura, descarga, aprobación y supervisión |
+| **Dirección** | Acceso transversal total: lectura, descarga, aprobación, supervisión y administración de usuarios |
+| **Inspectoría General** | Creación y administración de cuentas; acceso a otros módulos según matriz de permisos pendiente |
 | **Administración** | Gestión técnica: respaldos, configuración, bitácora y asignación de usuarios |
-| **Secretaría** | Carga, edición, foliación y emisión de correspondencia oficial (memos, oficios) y citaciones |
-| **Jefatura UTP** | Acceso a documentos técnico-pedagógicos, reuniones comunales y directrices curriculares |
+| **Secretaría de Dirección** | Carga, edición, foliación y emisión de correspondencia oficial (memos, oficios) y citaciones |
+| **Coordinación Académica / Jefatura Técnica** | Acceso a documentos técnico-pedagógicos, reuniones comunales y directrices curriculares |
 | **Convivencia Escolar** | Carga y lectura restringida de actas de acuerdos de apoderados y casos sensibles |
+
+Slugs internos (usados en rutas y middleware): `directora`, `inspectoria`, `administracion`, `secretaria`, `utp`, `convivencia`. En la interfaz siempre se muestra el nombre del cargo.
 
 ### Matriz resumen: crear vs. visualizar
 
 | Módulo | Quién crea y quién ve |
 |---|---|
-| **Memos y oficios** | **Crean y ven:** los 5 roles. **Editan/eliminan:** solo el autor o Administración. |
-| **Citaciones** | **Crean:** Convivencia, Secretaría, Dirección. **Ven:** los 5 roles. |
-| **Actas confidenciales** | **Crean:** Convivencia y Dirección. **Ven:** Convivencia, Dirección y UTP (UTP solo ámbito pedagógico). Secretaría y Administración: sin acceso (403). |
-| **Reuniones comunales** | **Crean:** UTP y Dirección. **Ven:** los 5 roles. |
-| **Permisos administrativos** | **Crean:** los 5 roles (la solicitud propia). **Ven:** Dirección y Administración ven las de todos; el resto solo las propias. **Aprueban/rechazan:** Dirección y Administración. |
-| **Usuarios** | **Crean/editan/eliminan:** solo Administración. El resto: sin acceso (403). |
+| **Memos y oficios** | **Crean y ven:** todos los usuarios autenticados (sin restricción de rol). **Editan/eliminan:** solo el autor o Administración. |
+| **Citaciones** | **Crean:** Convivencia, Secretaría de Dirección y Dirección. **Ven:** Administración, Dirección, Secretaría de Dirección, UTP y Convivencia. Inspectoría: sin acceso (403). |
+| **Actas confidenciales** | **Crean:** Convivencia y Dirección. **Ven:** Convivencia, Dirección y UTP (UTP solo ámbito pedagógico). Secretaría de Dirección, Administración e Inspectoría: sin acceso (403). |
+| **Reuniones comunales** | **Crean:** UTP y Dirección. **Ven:** Administración, Dirección, Secretaría de Dirección, UTP y Convivencia. Inspectoría: sin acceso (403). |
+| **Permisos administrativos** | **Crean:** los 6 roles — Dirección, Administración e Inspectoría para cualquier funcionario; el resto solo su propia solicitud. **Ven:** Dirección, Administración e Inspectoría ven las de todos; el resto solo las propias. **Aprueban/rechazan/editan/eliminan:** Dirección, Administración e Inspectoría. |
+| **Usuarios** | **Crean/editan/eliminan:** Administración, Dirección e Inspectoría General. El resto: sin acceso (403). |
 
 ## Estado Actual
 
 ### Fase 1 — Base del Sistema (Seguridad y Control de Acceso) ✅
 
-- **HU-01 (Gestión de Perfiles y Usuarios):** Panel exclusivo del Administrador para crear, editar y asignar usuarios a los 5 roles obligatorios mediante Middleware `CheckRole` en Laravel.
-- **Autenticación:** Login con Bootstrap 5, sesiones, protección CSRF. La creación de usuarios es exclusiva del rol Administración (`/admin/users`), que asigna un único rol al nuevo usuario; no hay registro público.
-- **RBAC funcional:** Middleware `role:administracion` bloquea acceso a usuarios sin el rol adecuado (verificado: usuario Secretaria recibe 403 en `/admin/users`).
+- **HU-01 (Gestión de Perfiles y Usuarios):** Panel de usuarios habilitado para Administración, Dirección e Inspectoría General para crear, editar y asignar cuentas a uno de los 6 roles mediante Middleware `CheckRole` en Laravel.
+- **Autenticación:** Login con Bootstrap 5, sesiones, protección CSRF. La creación de usuarios es exclusiva de Administración, Dirección e Inspectoría General (`/admin/users`), que asigna un único rol al nuevo usuario; no hay registro público.
+- **RBAC funcional:** Middleware `role:administracion|directora|inspectoria` bloquea acceso a usuarios sin el rol adecuado (verificado: usuario Convivencia recibe 403 en `/admin/users`).
 
 ### Fase 2 — Núcleo de Archivos y Correspondencia ✅
 
 Implementada, migrada y con evidencias de QA en [`tests/Evidence/`](tests/Evidence/):
 
-- **HU-02 (Memos y Oficios):** Registro con Folio, Tipo (`memo`/`oficio`), Fecha, Destinatario y Asunto. Adjunto opcional PDF/Word de hasta 15 MB en `storage/app/public` (disco `public`), con descarga por ruta dedicada. Unicidad de folio por año escolar validada en backend (`CorrespondenciaService::validarFolioUnico`). Solo el autor o el rol Administración pueden editar/eliminar un memo.
-- **HU-03 (Permisos Administrativos):** Solicitud con fechas, jornada completa o media, y motivo. Estados `pendiente` / `aprobado` / `rechazado` con flujo de aprobación (`/aprobar`, `/rechazar`) restringido a Dirección y Administración. Secretaría, UTP y Convivencia solo ven sus propias solicitudes; Dirección y Administración ven las de todo el equipo y su acumulado de días por funcionario.
+- **HU-02 (Memos y Oficios):** Registro con folio asignado automáticamente por el sistema (serie + año, p. ej. `MEMO-2026-0001`), Tipo (`memo`/`oficio`), Fecha, Destinatario y Asunto. Adjunto opcional PDF/Word o imagen (JPG/JPEG/PNG/WEBP) de hasta 15 MB en `storage/app/public` (disco `public`), con descarga por ruta dedicada. Unicidad de folio por serie (tipo) y año validada en backend (`CorrespondenciaService::validarFolioUnico`); el folio se regenera si cambia el tipo o el año de la fecha al editar. Solo el autor o el rol Administración pueden editar/eliminar un memo.
+- **HU-03 (Permisos Administrativos):** Solicitud con funcionario, fechas, jornada completa o media, motivo y respaldo documental opcional (PDF/Word/imagen, hasta 15 MB, descarga por ruta dedicada). Estados `pendiente` / `aprobado` / `rechazado` con flujo de aprobación (`/aprobar`, `/rechazar`) restringido a Dirección, Administración e Inspectoría. Secretaría, UTP y Convivencia solo ven sus propias solicitudes; Dirección, Administración e Inspectoría ven las de todo el equipo con días usados y disponibles por funcionario (cupo anual provisional de 10 días, `PermisoAdministrativo::CUPO_ANUAL`). Badge de solicitudes pendientes solo para perfiles autorizados; las solicitudes pendientes o rechazadas no descuentan días.
 
 **Funciona hoy:**
-- Login de usuarios (cuentas creadas solo por Administración, sin registro público)
-- Panel de administración de usuarios con CRUD completo y asignación de un rol mediante checkboxes
-- CRUD de memos/oficios con filtros por tipo y búsqueda, folio único por año y descarga del adjunto
-- Solicitudes de permisos con estados, aprobación/rechazo y contador de días acumulados
+- Login de usuarios (cuentas creadas solo por Administración, Dirección e Inspectoría General, sin registro público)
+- Panel de administración de usuarios con CRUD completo y asignación de un único rol mediante botones de opción
+- CRUD de memos/oficios con filtros por tipo y búsqueda, folio automático por serie+año y descarga del adjunto (PDF/Word/imagen)
+- Solicitudes de permisos con estados, respaldo adjunto descargable, aprobación/rechazo y contador de días usados y disponibles
 - Citaciones a apoderados con seguimiento de estados, filtros y adjunto (HU-04)
 - Actas confidenciales con acceso restringido por rol y ámbito (HU-05)
 - Repositorio de reuniones comunales con compromisos y fechas límite (HU-06)
 - Sidebar y tarjetas del dashboard adaptados a los permisos de cada rol
 - Middleware `CheckRole` protege todas las rutas administrativas y de gestión de permisos
-- Seed con 5 roles + usuario de prueba por rol
+- Seed con 6 roles (incluye Inspectoría General) + usuario de prueba por rol
 - Contenedores Docker listos para desarrollo (`docker compose up -d`)
 
 ### Fase 3 — Módulos Especializados (Convivencia y Redes) ✅
 
 Implementada, migrada y con evidencia de QA en [`tests/Evidence/`](tests/Evidence):
 
-- **HU-04 (Citaciones a Apoderados):** Registro con RUN/Nombre del estudiante, apoderado, funcionario que cita, fecha/hora y motivo (conductual, pedagógico, administrativo). Adjunto opcional —copia firmada o colilla— de hasta 15 MB en `storage/app/public/citaciones`. Estados de seguimiento `programada` / `asistio` / `no_asistio` / `reprogramada` gestionados con `PATCH /citaciones/{id}/estado`. Emisión (crear, editar, eliminar y actualizar estado) solo para Convivencia, Secretaría y Dirección; consulta y descarga para los 5 roles, con filtros por estado, motivo y búsqueda por estudiante/RUN/apoderado.
-- **HU-05 (Actas Confidenciales):** Actas de acuerdos con apoderados categorizadas `confidencial` / `sensible`, con ámbito (conductual, pedagógico, administrativo), archivo firmado obligatorio y búsqueda por nombre o RUN del estudiante. Acceso estricto: Convivencia y Dirección gestionan; UTP solo consulta y descarga actas de ámbito pedagógico; Secretaría y Administración reciben 403.
-- **HU-06 (Reuniones Comunales):** Repositorio categorizado (Red de UTP, Reunión de Directores, Mesa Comunal de Convivencia, DAEM/SLEP) con minuta u orientación adjunta y compromisos registrados con fecha límite de entrega institucional. La carga de reuniones y compromisos es de UTP y Dirección; los 5 roles directivos consultan y descargan.
+- **HU-04 (Citaciones a Apoderados):** Registro con RUN/Nombre del estudiante, apoderado, funcionario que cita, fecha/hora y motivo (conductual, pedagógico, administrativo). Adjunto opcional —copia firmada o colilla— de hasta 15 MB en `storage/app/public/citaciones`. Estados de seguimiento `programada` / `asistio` / `no_asistio` / `reprogramada` gestionados con `PATCH /citaciones/{id}/estado`. Emisión (crear, editar, eliminar y actualizar estado) solo para Convivencia, Secretaría de Dirección y Dirección; consulta y descarga para Administración, Dirección, Secretaría de Dirección, UTP y Convivencia (Inspectoría: sin acceso), con filtros por estado, motivo y búsqueda por estudiante/RUN/apoderado.
+- **HU-05 (Actas Confidenciales):** Actas de acuerdos con apoderados categorizadas `confidencial` / `sensible`, con ámbito (conductual, pedagógico, administrativo), archivo firmado obligatorio y búsqueda por nombre o RUN del estudiante. Acceso estricto: Convivencia y Dirección gestionan; UTP solo consulta y descarga actas de ámbito pedagógico; Secretaría de Dirección, Administración e Inspectoría reciben 403.
+- **HU-06 (Reuniones Comunales):** Repositorio categorizado (Red de UTP, Reunión de Directores, Mesa Comunal de Convivencia, DAEM/SLEP) con minuta u orientación adjunta y compromisos registrados con fecha límite de entrega institucional. La carga de reuniones y compromisos es de UTP y Dirección; Administración, Dirección, Secretaría de Dirección, UTP y Convivencia consultan y descargan (Inspectoría: sin acceso).
 
 ### Próximas fases
 
 | Fase | Objetivo |
 |---|---|
-| **Fase 4** | Trazabilidad, Búsqueda Avanzada y Auditoría (Épica 5) |
+| **Fase 4** | Búsqueda avanzada, papelera y auditoría (HU-07 y HU-08) |
 
-El detalle funcional completo está en [`brief.md`](brief.md).
+### Puntos por confirmar
+
+- **Edición/eliminación de memos (HU-02):** los requerimientos no definen quién edita memos; especifican solo "según autorización" y dejan el acceso concreto de cada módulo **pendiente de confirmación** (HU-01). La regla actual —*solo el autor o Administración pueden editar/eliminar*— es una decisión de implementación, no un requisito validado.
+- **Discrepancia con HU-08:** esta historia exige *"restringir la eliminación de documentos a Dirección e Inspectoría"*, pero hoy el autor **sí puede eliminar** su propio memo/oficio. Corresponde a Fase 4 (papelera y auditoría); deberá resolverse al implementarla.
+
+Las historias de usuario actualizadas están en [`requerimientos.md`](requerimientos.md); el brief técnico original en [`brief.md`](brief.md).
 
 ## Arquitectura
 
@@ -88,14 +96,14 @@ app/
 │   │   ├── RRHH/              <-- Permisos Administrativos
 │   │   ├── Convivencia/       <-- Citaciones y Actas Sensibles
 │   │   ├── UTP/               <-- Reuniones Comunales y Redes
-│   │   └── Auditoria/         <-- Buscador Avanzado y Bitácora
+│   │   └── Auditoria/         <-- Fase 4 (planificado): Buscador Avanzado y Bitácora
 │   ├── Requests/              <-- Validaciones independientes
 │   └── Middleware/            <-- Control de acceso basado en roles
 ├── Models/                    <-- Modelos Eloquent
 └── Services/                  <-- Lógica de negocio y gestión de ficheros
 database/
 ├── migrations/                <-- Esquemas relacionales MySQL
-└── seeders/                   <-- Datos iniciales (roles + admin)
+└── seeders/                   <-- Datos iniciales (6 roles + usuarios demo)
 ```
 
 Las decisiones arquitectónicas se explican en [`ARCHITECTURE.md`](ARCHITECTURE.md). Los principios de UI/UX, convenciones de código (PSR-12, naming) y manejo de archivos se detallan en [`style.md`](style.md).
@@ -130,7 +138,7 @@ docker compose up -d
 # 3. Ejecutar migraciones
 docker compose exec -T laravel.test php artisan migrate --force
 
-# 4. Sembrar datos iniciales (roles + admin)
+# 4. Sembrar datos iniciales (6 roles + usuarios de prueba)
 docker compose exec -T laravel.test php artisan db:seed --force
 
 # 5. Abrir en el navegador
@@ -143,11 +151,12 @@ El seeder crea un usuario de prueba por cada rol (contraseña: `password` para t
 
 | Rol | Email |
 |---|---|
-| Directora | `directora@sgd-chorombo.cl` |
+| Dirección | `directora@sgd-chorombo.cl` |
+| Inspectoría General | `inspectoria@sgd-chorombo.cl` |
 | Administración | `admin@sgd-chorombo.cl` |
-| Secretaría | `secretaria@sgd-chorombo.cl` |
-| UTP | `utp@sgd-chorombo.cl` |
-| Convivencia | `convivencia@sgd-chorombo.cl` |
+| Secretaría de Dirección | `secretaria@sgd-chorombo.cl` |
+| Coordinación Académica (UTP) | `utp@sgd-chorombo.cl` |
+| Convivencia Escolar | `convivencia@sgd-chorombo.cl` |
 
 El seeder es idempotente: puedes ejecutar `db:seed` varias veces sin duplicar datos.
 
@@ -199,7 +208,7 @@ docker compose exec -T mysql mysql -usail -ppassword sgd_chorombo -e "SELECT * F
 | GET/POST | `/login` | Público (guest) |
 | POST | `/logout` | Autenticado |
 | GET | `/dashboard` | Autenticado |
-| GET/POST/PUT/DELETE | `/admin/users[/{id}]` | `role:administracion` |
+| GET/POST/PUT/DELETE | `/admin/users[/{id}]` | `role:administracion\|directora\|inspectoria` |
 | GET | `/correspondencia/memos` · `/memos/{memo}` · `/memos/{memo}/download` | Autenticado |
 | GET | `/correspondencia/memos/create` · `/memos/{memo}/edit` | Autenticado (edición solo autor o Administración) |
 | POST/PUT/DELETE | `/correspondencia/memos[/{memo}]` | Autenticado (modificación solo autor o Administración) |
@@ -224,7 +233,7 @@ Las tablas siguen convención snake_case en plural:
 - `roles` — Roles/Perfiles
 - `role_user` — Pivote usuarios ↔ roles
 - `memos` — Memos y oficios con folio, tipo, fechas y adjunto
-- `permisos_administrativos` — Solicitudes de permiso con estado y aprobador
+- `permisos_administrativos` — Solicitudes de permiso con estado, aprobador y respaldo adjunto
 - `citaciones` — Citaciones a apoderados con motivo, estado de seguimiento y adjunto
 - `actas_confidenciales` — Actas de acuerdos con apoderados (confidencial/sensible)
 - `reuniones_comunales` — Reuniones comunales categorizadas con documento adjunto
@@ -234,12 +243,13 @@ Las tablas siguen convención snake_case en plural:
 
 El proyecto usa PHPUnit 12 (`php artisan test`). Suites actuales:
 
-- `RoleAccessTest` / `RegistrationDisabledTest` — RBAC y ausencia de registro público (Fase 1)
-- `Fase1CorreccionesQaTest` — un solo rol por usuario y flujos de login (Fase 1)
+- `RoleAccessTest` (7 casos) / `RegistrationDisabledTest` (3 casos) — RBAC y ausencia de registro público (Fase 1)
+- `RoleSeederTest` (2 casos) — catálogo de 6 cargos y cuenta demo de Inspectoría (Fase 1)
+- `Fase1CorreccionesQaTest` (6 casos) — un solo rol por usuario y flujos de login (Fase 1)
 - `Fase2QaTest` (22 casos) / `Fase2RevalidacionQaTest` (6 casos) — permisos, memos y reglas de propiedad (Fase 2)
 - `Fase3QaTest` (10 casos) — citaciones, actas confidenciales y reuniones comunales (Fase 3)
 
-La suite completa (`php artisan test`) suma 53 tests / 245 aserciones, todos verdes. Las corridas y hashes de las revisiones de QA quedan registrados en [`tests/Evidence/`](tests/Evidence/).
+La suite completa (`php artisan test`) suma 57 tests / 258 aserciones, todos verdes. Las corridas y hashes de las revisiones de QA quedan registrados en [`tests/Evidence/`](tests/Evidence/).
 
 ### Convenciones de código
 

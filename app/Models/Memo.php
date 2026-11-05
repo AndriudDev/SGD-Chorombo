@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -24,37 +25,45 @@ class Memo extends Model
     /**
      * Scope: filter by year.
      */
-    public static function byYear(int $year)
+    public function scopeByYear(Builder $query, int $year): Builder
     {
-        return self::whereYear('fecha', $year);
+        return $query->whereYear('fecha', $year);
     }
 
     /**
      * Scope: filter by tipo (memo|oficio).
      */
-    public static function byTipo(string $tipo)
+    public function scopeByTipo(Builder $query, string $tipo): Builder
     {
-        return self::where('tipo', $tipo);
+        return $query->where('tipo', $tipo);
     }
 
     /**
      * Scope: search in folio, destinatario, asunto.
      */
-    public static function search(string $query)
+    public function scopeSearch(Builder $query, string $search): Builder
     {
-        return self::where(function ($q) {
-            $q->where('folio', 'LIKE', "%{$query}%")
-                ->orWhere('destinatario', 'LIKE', "%{$query}%")
-                ->orWhere('asunto', 'LIKE', "%{$query}%");
+        return $query->where(function (Builder $q) use ($search) {
+            $q->where('folio', 'LIKE', "%{$search}%")
+                ->orWhere('destinatario', 'LIKE', "%{$search}%")
+                ->orWhere('asunto', 'LIKE', "%{$search}%");
         });
     }
 
     /**
-     * Check if a folio is unique in a given year.
+     * Scope: filter by exact fecha.
      */
-    public static function folioUnicoEnAnio(string $folio, int $year, ?int $excludeId = null): bool
+    public function scopeByFecha(Builder $query, string $fecha): Builder
     {
-        $q = self::where('folio', $folio)->whereYear('fecha', $year);
+        return $query->whereDate('fecha', $fecha);
+    }
+
+    /**
+     * Check if a folio is unique within its serie (tipo) and year.
+     */
+    public static function folioUnicoEnSerie(string $folio, string $tipo, int $year, ?int $excludeId = null): bool
+    {
+        $q = self::where('folio', $folio)->where('tipo', $tipo)->whereYear('fecha', $year);
         if ($excludeId) {
             $q->where('id', '!=', $excludeId);
         }
