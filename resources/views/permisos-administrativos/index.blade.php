@@ -88,8 +88,27 @@
                                         <span class="badge bg-warning rounded-pill">Pendiente</span>
                                     @elseif ($permiso->estado === 'aprobado')
                                         <span class="badge bg-success rounded-pill">Aprobado</span>
+                                    @elseif ($permiso->estado === 'revocada')
+                                        <span class="badge bg-secondary rounded-pill">Revocada</span>
                                     @else
                                         <span class="badge bg-danger rounded-pill">Rechazado</span>
+                                    @endif
+
+                                    {{-- Identidad auditada (REV-03): aprobador original y último decisor --}}
+                                    @if ($permiso->estado === 'aprobado' && $permiso->aprobador)
+                                        <div class="small text-muted">Aprobada por {{ $permiso->aprobador->name }}</div>
+                                    @elseif ($permiso->estado === 'revocada')
+                                        <div class="small text-muted">
+                                            @if ($permiso->aprobador)
+                                                Aprobada por {{ $permiso->aprobador->name }}
+                                            @endif
+                                            @if ($permiso->ultimaTransicion?->user)
+                                                {{ $permiso->aprobador ? '·' : '' }}
+                                                Revocada por {{ $permiso->ultimaTransicion->user->name }}
+                                            @endif
+                                        </div>
+                                    @elseif ($permiso->estado === 'rechazado' && $permiso->ultimaTransicion?->user)
+                                        <div class="small text-muted">Rechazada por {{ $permiso->ultimaTransicion->user->name }}</div>
                                     @endif
                                 </td>
                                 <td class="text-end">
@@ -157,6 +176,25 @@
                                                     data-confirm-icon="bi-x-lg"
                                                     data-confirm-btn-class="btn-danger">
                                                 <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    {{-- Revocar — Dirección y Administración, solo solicitudes aprobadas (REV-03) --}}
+                                    @if ($permiso->estado === 'aprobado' && $puedeRevocar)
+                                        <form action="{{ route('permisos.revocar', $permiso->id) }}"
+                                              method="POST"
+                                              class="d-inline">
+                                            @csrf
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-warning"
+                                                    title="Revocar"
+                                                    data-confirm-modal
+                                                    data-confirm-message="¿Revocar este permiso de {{ $permiso->user->name ?? '—' }}? Los días volverán al saldo del funcionario."
+                                                    data-confirm-btn="Revocar permiso"
+                                                    data-confirm-icon="bi-arrow-counterclockwise"
+                                                    data-confirm-btn-class="btn-warning">
+                                                <i class="bi bi-arrow-counterclockwise"></i>
                                             </button>
                                         </form>
                                     @endif

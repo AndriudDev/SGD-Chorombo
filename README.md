@@ -47,13 +47,13 @@ Slugs internos (usados en rutas y middleware): `directora`, `inspectoria`, `admi
 Implementada, migrada y con evidencias de QA en [`tests/Evidence/`](tests/Evidence/):
 
 - **HU-02 (Memos y Oficios):** Registro con folio asignado automáticamente por el sistema (serie + año, p. ej. `MEMO-2026-0001`), Tipo (`memo`/`oficio`), Fecha, Destinatario y Asunto. Adjunto opcional PDF/Word o imagen (JPG/JPEG/PNG/WEBP) de hasta 15 MB en `storage/app/public` (disco `public`), con descarga por ruta dedicada. Unicidad de folio por serie (tipo) y año validada en backend (`CorrespondenciaService::validarFolioUnico`); el folio se regenera si cambia el tipo o el año de la fecha al editar. Solo el autor o el rol Administración pueden editar/eliminar un memo.
-- **HU-03 (Permisos Administrativos):** Solicitud con funcionario, fechas, jornada completa o media, motivo y respaldo documental opcional (PDF/Word/imagen, hasta 15 MB, descarga por ruta dedicada). Estados `pendiente` / `aprobado` / `rechazado` con flujo de aprobación (`/aprobar`, `/rechazar`) restringido a Dirección, Administración e Inspectoría. Secretaría, UTP y Convivencia solo ven sus propias solicitudes; Dirección, Administración e Inspectoría ven las de todo el equipo con días usados y disponibles por funcionario (cupo anual provisional de 10 días, `PermisoAdministrativo::CUPO_ANUAL`). Badge de solicitudes pendientes solo para perfiles autorizados; las solicitudes pendientes o rechazadas no descuentan días.
+- **HU-03 (Permisos Administrativos):** Solicitud con funcionario, fechas, jornada completa o media, motivo y respaldo documental opcional (PDF/Word/imagen, hasta 15 MB, descarga por ruta dedicada). Estados `pendiente` / `aprobado` / `rechazado` / `revocada` con matriz de transiciones en servidor (`PermisoAdministrativo::TRANSICIONES`, REV-03): una solicitud `aprobada` ya no puede rechazarse directamente, solo revocarse vía `/revocar` (Dirección y Administración), lo que devuelve los días al saldo. Aprobación y rechazo (`/aprobar`, `/rechazar`) restringidos a Dirección, Administración e Inspectoría. `aprobado_por` identifica solo al aprobador original; cada transición queda registrada en `permiso_transiciones` con su actor (historial de auditoría). Secretaría, UTP y Convivencia solo ven sus propias solicitudes; Dirección, Administración e Inspectoría ven las de todo el equipo con días usados y disponibles por funcionario (cupo anual provisional de 10 días, `PermisoAdministrativo::CUPO_ANUAL`). Badge de solicitudes pendientes solo para perfiles autorizados; las solicitudes pendientes o rechazadas no descuentan días.
 
 **Funciona hoy:**
 - Login de usuarios (cuentas creadas solo por Administración, Dirección e Inspectoría General, sin registro público)
 - Panel de administración de usuarios con CRUD completo y asignación de un único rol mediante botones de opción
 - CRUD de memos/oficios con filtros por tipo y búsqueda, folio automático por serie+año y descarga del adjunto (PDF/Word/imagen)
-- Solicitudes de permisos con estados, respaldo adjunto descargable, aprobación/rechazo y contador de días usados y disponibles
+- Solicitudes de permisos con estados, respaldo adjunto descargable, aprobación/rechazo, revocación de aprobadas (Dirección/Administración), contador de días usados y disponibles e historial de auditoría de cada transición
 - Citaciones a apoderados con seguimiento de estados, filtros y adjunto (HU-04)
 - Actas confidenciales con acceso restringido por rol y ámbito (HU-05)
 - Repositorio de reuniones comunales con compromisos y fechas límite (HU-06)
@@ -61,6 +61,7 @@ Implementada, migrada y con evidencias de QA en [`tests/Evidence/`](tests/Eviden
 - Middleware `CheckRole` protege todas las rutas administrativas y de gestión de permisos
 - Seed con 6 roles (incluye Inspectoría General) + usuario de prueba por rol
 - Contenedores Docker listos para desarrollo (`docker compose up -d`)
+- Control de caché del navegador en todas las páginas (`Cache-Control: no-store, no-cache, must-revalidate, private` vía `CacheControlMiddleware`): tras un Logout, el botón "Atrás" del navegador ya no muestra datos sensibles — obliga al navegador a pasar por el servidor, que redirige al login (OBS-04)
 
 ### Fase 3 — Módulos Especializados (Convivencia y Redes) ✅
 
@@ -213,7 +214,8 @@ docker compose exec -T mysql mysql -usail -ppassword sgd_chorombo -e "SELECT * F
 | GET | `/correspondencia/memos/create` · `/memos/{memo}/edit` | Autenticado (edición solo autor o Administración) |
 | POST/PUT/DELETE | `/correspondencia/memos[/{memo}]` | Autenticado (modificación solo autor o Administración) |
 | GET/POST | `/permisos-administrativos[/create]` | `administracion\|directora\|secretaria\|utp\|convivencia` |
-| GET/PUT/DELETE/POST | `/permisos-administrativos/{id}/edit` · `/{id}` · `/aprobar` · `/rechazar` | `role:administracion\|directora` |
+| GET/PUT/DELETE/POST | `/permisos-administrativos/{id}/edit` · `/{id}` · `/aprobar` · `/rechazar` | `role:administracion\|directora\|inspectoria` |
+| POST | `/permisos-administrativos/{id}/revocar` | `role:administracion\|directora` |
 | GET | `/citaciones` · `/{id}` · `/{id}/download` | `role:administracion\|directora\|secretaria\|utp\|convivencia` (lectura) |
 | GET/POST/PUT/DELETE/PATCH | `/citaciones/create` · `/{id}/edit` · `/{id}` · `/{id}/estado` | `role:convivencia\|secretaria\|directora` (emisión) |
 | GET | `/actas-confidenciales` · `/{id}/download` | `role:convivencia\|directora\|utp` (UTP: solo ámbito pedagógico) |
@@ -234,6 +236,7 @@ Las tablas siguen convención snake_case en plural:
 - `role_user` — Pivote usuarios ↔ roles
 - `memos` — Memos y oficios con folio, tipo, fechas y adjunto
 - `permisos_administrativos` — Solicitudes de permiso con estado, aprobador y respaldo adjunto
+- `permiso_transiciones` — Historial de auditoría: cada cambio de estado con su actor, estado anterior y nuevo
 - `citaciones` — Citaciones a apoderados con motivo, estado de seguimiento y adjunto
 - `actas_confidenciales` — Actas de acuerdos con apoderados (confidencial/sensible)
 - `reuniones_comunales` — Reuniones comunales categorizadas con documento adjunto
@@ -248,8 +251,9 @@ El proyecto usa PHPUnit 12 (`php artisan test`). Suites actuales:
 - `Fase1CorreccionesQaTest` (6 casos) — un solo rol por usuario y flujos de login (Fase 1)
 - `Fase2QaTest` (22 casos) / `Fase2RevalidacionQaTest` (6 casos) — permisos, memos y reglas de propiedad (Fase 2)
 - `Fase3QaTest` (10 casos) — citaciones, actas confidenciales y reuniones comunales (Fase 3)
+- `PermisoTransicionesTest` (11 casos) — matriz de transiciones de permisos, roles de revocación, saldo e identidad auditada (REV-03)
 
-La suite completa (`php artisan test`) suma 57 tests / 258 aserciones, todos verdes. Las corridas y hashes de las revisiones de QA quedan registrados en [`tests/Evidence/`](tests/Evidence/).
+La suite completa (`php artisan test`) suma 78 tests / 365 aserciones; 76 en verde. Los 2 fallos restantes son pruebas obsoletas sin relación con esta materia (`Fase2RequisitosActualizadosTest::test_example` espera 200 en `/` que redirige al login, y `Fase2RevalidacionQaTest` espera el folio antiguo `MEM-001` frente al folio automático `MEMO-2026-0001`). Las corridas y hashes de las revisiones de QA quedan registrados en [`tests/Evidence/`](tests/Evidence/).
 
 ### Convenciones de código
 

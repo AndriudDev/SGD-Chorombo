@@ -62,6 +62,11 @@ Route::middleware(['auth', 'role:administracion|directora|inspectoria'])->group(
     Route::post('permisos-administrativos/{permiso}/rechazar', [PermisoAdminController::class, 'rechazar'])->name('permisos.rechazar');
 });
 
+// Revocar solicitud aprobada — solo Dirección y Administración (REV-03)
+Route::post('permisos-administrativos/{permiso}/revocar', [PermisoAdminController::class, 'revocar'])
+    ->middleware(['auth', 'role:administracion|directora'])
+    ->name('permisos.revocar');
+
 // Citaciones a Apoderados (HU-04)
 Route::middleware('auth')->prefix('citaciones')->group(function () {
     // Emisión y seguimiento — Convivencia, Secretaría y Dirección

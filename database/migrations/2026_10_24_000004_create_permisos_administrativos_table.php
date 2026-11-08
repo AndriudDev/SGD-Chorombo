@@ -18,7 +18,7 @@ return new class extends Migration
             $table->date('fecha_fin');
             $table->string('tipo_jornada', 20);  // 'completa' | 'media'
             $table->text('motivo');
-            $table->string('estado', 20)->default('pendiente');  // 'pendiente', 'aprobado', 'rechazado'
+            $table->string('estado', 20)->default('pendiente');  // 'pendiente', 'aprobado', 'rechazado', 'revocada'
             $table->foreignId('aprobado_por')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('created_by')->constrained('users');
             $table->timestamps();

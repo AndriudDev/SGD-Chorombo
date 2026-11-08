@@ -1,6 +1,10 @@
 @extends('layouts.admin')
 
 @section('content')
+    @php
+        $user = auth()->user();
+        $puedeModificar = $user->hasAnyRole(['administracion']) || $memo->user_id === $user->id;
+    @endphp
     <div class="d-flex justify-content-between align-items-center sgd-page-header">
         <h1 class="h3">Detalle del Memo/Oficio</h1>
         <a href="{{ route('memos.index') }}" class="btn btn-outline-secondary">
@@ -63,27 +67,30 @@
                 </div>
             @endif
         </div>
-        <div class="card-footer">
-            <div class="d-flex justify-content-end gap-2">
-                <a href="{{ route('memos.edit', $memo->id) }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-pencil me-1"></i> Editar
-                </a>
-                <form action="{{ route('memos.destroy', $memo->id) }}"
-                      method="POST"
-                      class="d-inline">
-                    @csrf
-                    @method('DELETE')
-                    <button type="button"
-                            class="btn btn-outline-danger"
-                            data-confirm-modal
-                            data-confirm-message="¿Está seguro de eliminar el memo/oficio «{{ $memo->folio }}»? Esta acción no se puede deshacer."
-                            data-confirm-btn="Eliminar"
-                            data-confirm-icon="bi-trash"
-                            data-confirm-btn-class="btn-danger">
-                        <i class="bi bi-trash me-1"></i> Eliminar
-                    </button>
-                </form>
+        {{-- Editar/Eliminar — solo el autor del memo o Administración (misma regla que el backend) --}}
+        @if ($puedeModificar)
+            <div class="card-footer">
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{{ route('memos.edit', $memo->id) }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-pencil me-1"></i> Editar
+                    </a>
+                    <form action="{{ route('memos.destroy', $memo->id) }}"
+                          method="POST"
+                          class="d-inline">
+                        @csrf
+                        @method('DELETE')
+                        <button type="button"
+                                class="btn btn-outline-danger"
+                                data-confirm-modal
+                                data-confirm-message="¿Está seguro de eliminar el memo/oficio «{{ $memo->folio }}»? Esta acción no se puede deshacer."
+                                data-confirm-btn="Eliminar"
+                                data-confirm-icon="bi-trash"
+                                data-confirm-btn-class="btn-danger">
+                            <i class="bi bi-trash me-1"></i> Eliminar
+                        </button>
+                    </form>
+                </div>
             </div>
-        </div>
+        @endif
     </div>
 @endsection

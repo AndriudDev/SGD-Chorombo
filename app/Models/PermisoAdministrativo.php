@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable(['user_id', 'fecha_inicio', 'fecha_fin', 'tipo_jornada', 'motivo', 'archivo', 'estado', 'aprobado_por', 'created_by'])]
 class PermisoAdministrativo extends Model
@@ -14,6 +16,25 @@ class PermisoAdministrativo extends Model
      * definitive quota is confirmed with Dirección (HU-03).
      */
     public const CUPO_ANUAL = 10;
+
+    public const ESTADO_PENDIENTE = 'pendiente';
+
+    public const ESTADO_APROBADO = 'aprobado';
+
+    public const ESTADO_RECHAZADO = 'rechazado';
+
+    public const ESTADO_REVOCADA = 'revocada';
+
+    /**
+     * Legal state transitions (REV-03). An approved request can only leave
+     * its state through the formal revocation flow, never through rejection.
+     */
+    private const TRANSICIONES = [
+        'pendiente' => ['aprobado', 'rechazado'],
+        'aprobado' => ['revocada'],
+        'rechazado' => [],
+        'revocada' => [],
+    ];
 
     protected $table = 'permisos_administrativos';
 
@@ -41,6 +62,20 @@ class PermisoAdministrativo extends Model
     }
 
     /**
+     * Audit trail of state changes (REV-03). The user_id of each row is the
+     * person who performed that specific transition.
+     */
+    public function transiciones(): HasMany
+    {
+        return $this->hasMany(PermisoTransicion::class, 'permiso_administrativo_id');
+    }
+
+    public function ultimaTransicion(): HasOne
+    {
+        return $this->hasOne(PermisoTransicion::class, 'permiso_administrativo_id')->latestOfMany();
+    }
+
+    /**
      * Calculate number of days requested (inclusive).
      * A media jornada counts as half a day per date.
      */
@@ -61,6 +96,14 @@ class PermisoAdministrativo extends Model
             ->whereYear('fecha_inicio', $year)
             ->get()
             ->sum(fn ($p) => $p->diasSolicitados());
+    }
+
+    /**
+     * Whether this request is allowed to move to the given state.
+     */
+    public function puedePasarA(string $nuevoEstado): bool
+    {
+        return in_array($nuevoEstado, self::TRANSICIONES[$this->estado] ?? [], true);
     }
 
     /**

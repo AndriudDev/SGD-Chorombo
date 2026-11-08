@@ -1,6 +1,10 @@
 @extends('layouts.admin')
 
 @section('content')
+    @php
+        $user = auth()->user();
+        $esAdministracion = $user->hasAnyRole(['administracion']);
+    @endphp
     <div class="d-flex justify-content-between align-items-center sgd-page-header">
         <h1 class="h3">Memos y Oficios</h1>
         <a href="{{ route('memos.create') }}" class="btn btn-primary">
@@ -97,27 +101,30 @@
                                        title="Ver">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a href="{{ route('memos.edit', $memo->id) }}"
-                                       class="btn btn-sm btn-outline-secondary me-1"
-                                       title="Editar">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <form action="{{ route('memos.destroy', $memo->id) }}"
-                                          method="POST"
-                                          class="d-inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-danger me-1"
-                                                title="Eliminar"
-                                                data-confirm-modal
-                                                data-confirm-message="¿Está seguro de eliminar el memo/oficio «{{ $memo->folio }}»? Esta acción no se puede deshacer."
-                                                data-confirm-btn="Eliminar"
-                                                data-confirm-icon="bi-trash"
-                                                data-confirm-btn-class="btn-danger">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
+                                    {{-- Editar/Eliminar — solo el autor del memo o Administración (misma regla que el backend) --}}
+                                    @if ($esAdministracion || $memo->user_id === $user->id)
+                                        <a href="{{ route('memos.edit', $memo->id) }}"
+                                           class="btn btn-sm btn-outline-secondary me-1"
+                                           title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form action="{{ route('memos.destroy', $memo->id) }}"
+                                              method="POST"
+                                              class="d-inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger me-1"
+                                                    title="Eliminar"
+                                                    data-confirm-modal
+                                                    data-confirm-message="¿Está seguro de eliminar el memo/oficio «{{ $memo->folio }}»? Esta acción no se puede deshacer."
+                                                    data-confirm-btn="Eliminar"
+                                                    data-confirm-icon="bi-trash"
+                                                    data-confirm-btn-class="btn-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    @endif
                                     @if ($memo->archivo)
                                         <a href="{{ route('memos.download', $memo->id) }}"
                                            class="btn btn-sm btn-outline-primary"

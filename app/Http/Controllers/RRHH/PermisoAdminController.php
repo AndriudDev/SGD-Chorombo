@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\CorrespondenciaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -21,6 +22,20 @@ class PermisoAdminController extends Controller
     ) {}
 
     /**
+     * Record who performed a state change on a permiso (REV-03 audit trail).
+     * Call it after the state update, inside the same transaction: the row's
+     * user_id is the actor, never the approver of record (`aprobado_por`).
+     */
+    private function registrarTransicion(PermisoAdministrativo $permiso, ?string $estadoAnterior): void
+    {
+        $permiso->transiciones()->create([
+            'user_id' => auth()->id(),
+            'estado_anterior' => $estadoAnterior,
+            'estado_nuevo' => $permiso->estado,
+        ]);
+    }
+
+    /**
      * List permisos with optional filters.
      */
     public function index(): View
@@ -28,8 +43,9 @@ class PermisoAdminController extends Controller
         $user = Auth::user();
         $year = request()->input('year', date('Y'));
         $esSupervisor = $user->hasAnyRole(['directora', 'administracion', 'inspectoria']);
+        $puedeRevocar = $user->hasAnyRole(['directora', 'administracion']);
 
-        $query = PermisoAdministrativo::with('user', 'aprobador');
+        $query = PermisoAdministrativo::with(['user', 'aprobador', 'ultimaTransicion.user']);
 
         // Secretaría, UTP y Convivencia solo ven sus propios permisos
         if (! $esSupervisor) {
@@ -57,7 +73,7 @@ class PermisoAdminController extends Controller
             ? PermisoAdministrativo::where('estado', 'pendiente')->count()
             : null;
 
-        return view('permisos-administrativos.index', compact('permisos', 'diasAcumulados', 'acumuladosPorUsuario', 'pendientesCount'))
+        return view('permisos-administrativos.index', compact('permisos', 'diasAcumulados', 'acumuladosPorUsuario', 'pendientesCount', 'puedeRevocar'))
             ->with('cupo', PermisoAdministrativo::CUPO_ANUAL);
     }
 
@@ -103,6 +119,8 @@ class PermisoAdminController extends Controller
             $permiso->archivo = $this->correspondenciaService->subirRespaldoPermiso($request->file('archivo'), $permiso);
             $permiso->save();
         }
+
+        $this->registrarTransicion($permiso, null);
 
         return redirect()->route('permisos.index')
             ->with('success', 'Solicitud de permiso creada correctamente.');
@@ -191,10 +209,20 @@ class PermisoAdminController extends Controller
      */
     public function aprobar(PermisoAdministrativo $permiso): RedirectResponse
     {
-        $permiso->update([
-            'estado' => 'aprobado',
-            'aprobado_por' => auth()->id(),
-        ]);
+        if (! $permiso->puedePasarA(PermisoAdministrativo::ESTADO_APROBADO)) {
+            return back()->with('error', "No se puede aprobar una solicitud en estado \"{$permiso->estado}\".");
+        }
+
+        DB::transaction(function () use ($permiso): void {
+            $estadoAnterior = $permiso->estado;
+
+            $permiso->update([
+                'estado' => 'aprobado',
+                'aprobado_por' => auth()->id(),
+            ]);
+
+            $this->registrarTransicion($permiso, $estadoAnterior);
+        });
 
         return redirect()->route('permisos.index')
             ->with('success', 'Permiso aprobado correctamente.');
@@ -205,12 +233,50 @@ class PermisoAdminController extends Controller
      */
     public function rechazar(PermisoAdministrativo $permiso): RedirectResponse
     {
-        $permiso->update([
-            'estado' => 'rechazado',
-            'aprobado_por' => auth()->id(),
-        ]);
+        if ($permiso->estado === PermisoAdministrativo::ESTADO_APROBADO) {
+            return back()->with('error', 'Una solicitud aprobada no puede rechazarse. Use el flujo de revocación.');
+        }
+
+        if (! $permiso->puedePasarA(PermisoAdministrativo::ESTADO_RECHAZADO)) {
+            return back()->with('error', "No se puede rechazar una solicitud en estado \"{$permiso->estado}\".");
+        }
+
+        DB::transaction(function () use ($permiso): void {
+            $estadoAnterior = $permiso->estado;
+
+            $permiso->update([
+                'estado' => 'rechazado',
+            ]);
+
+            $this->registrarTransicion($permiso, $estadoAnterior);
+        });
 
         return redirect()->route('permisos.index')
             ->with('success', 'Permiso rechazado correctamente.');
+    }
+
+    /**
+     * Revoke an approved request through the formal revocation flow
+     * (Dirección / Administración only). The returned days are restored
+     * automatically because the balance only counts approved requests.
+     */
+    public function revocar(PermisoAdministrativo $permiso): RedirectResponse
+    {
+        if (! $permiso->puedePasarA(PermisoAdministrativo::ESTADO_REVOCADA)) {
+            return back()->with('error', 'Solo se pueden revocar solicitudes aprobadas.');
+        }
+
+        DB::transaction(function () use ($permiso): void {
+            $estadoAnterior = $permiso->estado;
+
+            $permiso->update([
+                'estado' => PermisoAdministrativo::ESTADO_REVOCADA,
+            ]);
+
+            $this->registrarTransicion($permiso, $estadoAnterior);
+        });
+
+        return redirect()->route('permisos.index')
+            ->with('success', 'Permiso revocado correctamente. Los días vuelven al saldo del funcionario.');
     }
 }
