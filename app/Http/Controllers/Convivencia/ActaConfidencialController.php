@@ -20,16 +20,12 @@ class ActaConfidencialController extends Controller
     ) {}
 
     /**
-     * List confidential actas.
-     * UTP only sees actas of pedagogical ámbito (HU-05).
+     * List confidential actas (HU-05: la ruta solo admite Convivencia y Dirección).
      */
     public function index(): View
     {
         $query = ActaConfidencial::with('user');
 
-        if (Auth::user()->hasRole('utp')) {
-            $query->byAmbito('pedagogico');
-        }
         if ($ambito = request()->input('ambito')) {
             $query->byAmbito($ambito);
         }
@@ -66,6 +62,7 @@ class ActaConfidencialController extends Controller
             'estudiante_run' => $request->estudiante_run,
             'apoderado_nombre' => $request->apoderado_nombre,
             'fecha' => $request->fecha,
+            'numero_reserva' => Auth::user()->hasRole('directora') ? ($request->input('numero_reserva') ?: null) : null,
             'user_id' => auth()->id(),
         ]);
 
@@ -73,6 +70,7 @@ class ActaConfidencialController extends Controller
             $request->file('archivo'),
             'actas',
             "acta-{$acta->id}-{$acta->estudiante_run}",
+            'local',
         );
         $acta->save();
 
@@ -93,7 +91,7 @@ class ActaConfidencialController extends Controller
      */
     public function update(UpdateActaConfidencialRequest $request, ActaConfidencial $acta): RedirectResponse
     {
-        $acta->update([
+        $datos = [
             'titulo' => $request->titulo,
             'categoria' => $request->categoria,
             'ambito' => $request->ambito,
@@ -101,14 +99,22 @@ class ActaConfidencialController extends Controller
             'estudiante_run' => $request->estudiante_run,
             'apoderado_nombre' => $request->apoderado_nombre,
             'fecha' => $request->fecha,
-        ]);
+        ];
+
+        // La numeración reservada la asigna y modifica únicamente Dirección (HU-05).
+        if (Auth::user()->hasRole('directora')) {
+            $datos['numero_reserva'] = $request->input('numero_reserva') ?: null;
+        }
+
+        $acta->update($datos);
 
         if ($request->hasFile('archivo')) {
-            $this->archivoService->eliminar($acta->archivo);
+            $this->archivoService->eliminar($acta->archivo, 'local');
             $acta->archivo = $this->archivoService->subir(
                 $request->file('archivo'),
                 'actas',
                 "acta-{$acta->id}-{$acta->estudiante_run}",
+                'local',
             );
             $acta->save();
         }
@@ -122,7 +128,7 @@ class ActaConfidencialController extends Controller
      */
     public function destroy(ActaConfidencial $acta): RedirectResponse
     {
-        $this->archivoService->eliminar($acta->archivo);
+        $this->archivoService->eliminar($acta->archivo, 'local');
         $acta->delete();
 
         return redirect()->route('actas.index')
@@ -130,22 +136,10 @@ class ActaConfidencialController extends Controller
     }
 
     /**
-     * Download the acta file. UTP can only download pedagogical actas (HU-05).
+     * Download the acta file from private storage (HU-05: sin enlaces públicos).
      */
     public function download(ActaConfidencial $acta): StreamedResponse
     {
-        $this->autorizarConsultaUtp($acta);
-
-        return Storage::disk('public')->download($acta->archivo);
-    }
-
-    /**
-     * Abort with 403 when a UTP user tries to reach a non-pedagogical acta.
-     */
-    private function autorizarConsultaUtp(ActaConfidencial $acta): void
-    {
-        if (Auth::user()->hasRole('utp') && $acta->ambito !== 'pedagogico') {
-            abort(403, 'Las actas de ámbito no pedagógico no son visibles para la Jefatura de UTP.');
-        }
+        return Storage::disk('local')->download($acta->archivo);
     }
 }

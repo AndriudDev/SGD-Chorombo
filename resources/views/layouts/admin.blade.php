@@ -53,7 +53,7 @@
                         <span class="sidebar-label">Citaciones</span>
                     </a>
                 </li>
-                @if (auth()->user()->hasAnyRole(['convivencia', 'directora', 'utp']))
+                @if (auth()->user()->hasAnyRole(['convivencia', 'directora']))
                     <li class="nav-item">
                         <a href="{{ route('actas.index') }}"
                            class="nav-link {{ request()->routeIs('actas.*') ? 'active' : '' }}">

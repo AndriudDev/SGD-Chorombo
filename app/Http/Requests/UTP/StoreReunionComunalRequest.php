@@ -20,7 +20,7 @@ class StoreReunionComunalRequest extends FormRequest
             'categoria' => ['required', Rule::in(array_keys(ReunionComunal::CATEGORIAS))],
             'fecha' => ['required', 'date'],
             'descripcion' => ['nullable', 'string'],
-            'archivo' => ['required', 'file', 'mimes:pdf,ppt,pptx,doc,docx', 'max:15360'],
+            'archivo' => ['nullable', 'file', 'mimes:pdf,ppt,pptx,doc,docx,jpg,jpeg,png', 'max:15360'],
         ];
     }
 
@@ -31,8 +31,7 @@ class StoreReunionComunalRequest extends FormRequest
             'categoria.required' => 'La categoría es obligatoria.',
             'categoria.in' => 'La categoría indicada no es válida.',
             'fecha.required' => 'La fecha de la reunión es obligatoria.',
-            'archivo.required' => 'Debe adjuntar la minuta, orientación o presentación.',
-            'archivo.mimes' => 'Solo se permiten archivos PDF, PPT, PPTX, DOC o DOCX.',
+            'archivo.mimes' => 'Solo se permiten archivos PDF, PPT, PPTX, DOC, DOCX, JPG o PNG.',
             'archivo.max' => 'El archivo no debe superar los 15 MB.',
         ];
     }

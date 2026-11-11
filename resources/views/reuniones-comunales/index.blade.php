@@ -19,7 +19,7 @@
     <div class="card filter-card mb-3">
         <div class="card-body">
             <form method="GET" action="{{ route('comunales.index') }}" class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="categoria" class="form-label">Categoría</label>
                     <select name="categoria" id="categoria" class="form-select">
                         <option value="">Todas</option>
@@ -28,7 +28,15 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-3">
+                    <label for="fecha" class="form-label">Fecha</label>
+                    <input type="date"
+                           class="form-control"
+                           id="fecha"
+                           name="fecha"
+                           value="{{ request()->input('fecha', '') }}">
+                </div>
+                <div class="col-md-4">
                     <label for="search" class="form-label">Buscar</label>
                     <input type="text"
                            class="form-control"

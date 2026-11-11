@@ -23,6 +23,7 @@ class UpdateActaConfidencialRequest extends FormRequest
             'estudiante_run' => ['required', 'string', 'max:12'],
             'apoderado_nombre' => ['required', 'string', 'max:255'],
             'fecha' => ['required', 'date'],
+            'numero_reserva' => ['nullable', 'string', 'max:50'],
             'archivo' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:15360'],
         ];
     }
@@ -39,6 +40,7 @@ class UpdateActaConfidencialRequest extends FormRequest
             'estudiante_run.required' => 'El RUN del estudiante es obligatorio.',
             'apoderado_nombre.required' => 'El nombre del apoderado es obligatorio.',
             'fecha.required' => 'La fecha del acta es obligatoria.',
+            'numero_reserva.max' => 'La numeración reservada no puede superar los 50 caracteres.',
             'archivo.mimes' => 'Solo se permiten archivos PDF, JPG, PNG, DOC o DOCX.',
             'archivo.max' => 'El archivo no debe superar los 15 MB.',
         ];

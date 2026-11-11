@@ -87,7 +87,7 @@ Route::middleware('auth')->prefix('citaciones')->group(function () {
     });
 });
 
-// Actas Confidenciales de Acuerdos con Apoderados (HU-05) — Convivencia y Dirección (UTP solo consulta ámbito pedagógico)
+// Actas Confidenciales de Acuerdos con Apoderados (HU-05) — Convivencia y Dirección; UTP no accede a reservados
 Route::middleware('auth')->prefix('actas-confidenciales')->group(function () {
     // Carga y gestión — Convivencia y Dirección
     Route::middleware('role:convivencia|directora')->group(function () {
@@ -98,8 +98,8 @@ Route::middleware('auth')->prefix('actas-confidenciales')->group(function () {
         Route::delete('{acta}', [ActaConfidencialController::class, 'destroy'])->name('actas.destroy');
     });
 
-    // Consulta y descarga — Convivencia, Dirección y UTP (acotado en controlador)
-    Route::middleware('role:convivencia|directora|utp')->group(function () {
+    // Consulta y descarga — Convivencia y Dirección (HU-05: UTP no accede aunque sea ámbito pedagógico)
+    Route::middleware('role:convivencia|directora')->group(function () {
         Route::get('/', [ActaConfidencialController::class, 'index'])->name('actas.index');
         Route::get('{acta}/download', [ActaConfidencialController::class, 'download'])->name('actas.download');
     });

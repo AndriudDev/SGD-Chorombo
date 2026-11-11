@@ -87,7 +87,7 @@
                     </div>
                 </div>
 
-                @if (auth()->user()->hasAnyRole(['convivencia', 'directora', 'utp']))
+                @if (auth()->user()->hasAnyRole(['convivencia', 'directora']))
                     <div class="col-sm-6 col-lg-4 d-flex align-items-stretch">
                         <div class="card sgd-module-card border-0 h-100">
                             <div class="card-body d-flex flex-column align-items-center text-center py-5 px-4">

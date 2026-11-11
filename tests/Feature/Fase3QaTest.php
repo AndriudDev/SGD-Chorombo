@@ -31,6 +31,7 @@ class Fase3QaTest extends TestCase
         parent::setUp();
 
         Storage::fake('public');
+        Storage::fake('local');
 
         $this->convivencia = $this->crearUsuarioConRol('convivencia', 'Convivencia');
         $this->secretaria = $this->crearUsuarioConRol('secretaria', 'Secretaria');
@@ -255,7 +256,7 @@ class Fase3QaTest extends TestCase
         $this->actingAs($this->admin)->get(route('actas.create'))->assertForbidden();
     }
 
-    public function test_utp_consulta_solo_actas_de_ambito_pedagogico(): void
+    public function test_utp_no_accede_a_actas_confidenciales_ni_en_ambito_pedagogico(): void
     {
         $actaPedagogica = ActaConfidencial::create([
             'titulo' => 'Acta Compromiso Pedagogico UTP',
@@ -268,43 +269,20 @@ class Fase3QaTest extends TestCase
             'archivo' => 'actas/acta-pedagogica.pdf',
             'user_id' => $this->convivencia->id,
         ]);
-        $actaConductual = ActaConfidencial::create([
-            'titulo' => 'Acta Confidencial Conductual Privada',
-            'categoria' => 'sensible',
-            'ambito' => 'conductual',
-            'estudiante_nombre' => 'Alumno Conductual',
-            'estudiante_run' => '66.666.666-6',
-            'apoderado_nombre' => 'Apoderado Conductual',
-            'fecha' => '2026-10-13',
-            'archivo' => 'actas/acta-conductual.pdf',
-            'user_id' => $this->convivencia->id,
-        ]);
 
-        Storage::disk('public')->put('actas/acta-pedagogica.pdf', 'contenido pedagogico');
-        Storage::disk('public')->put('actas/acta-conductual.pdf', 'contenido conductual');
+        Storage::disk('local')->put('actas/acta-pedagogica.pdf', 'contenido pedagogico');
 
-        $this->actingAs($this->utp)
-            ->get(route('actas.index'))
-            ->assertOk()
-            ->assertSee('Acta Compromiso Pedagogico UTP')
-            ->assertDontSee('Acta Confidencial Conductual Privada');
-
-        $this->actingAs($this->utp)
-            ->get(route('actas.download', $actaPedagogica))
-            ->assertOk();
-
-        $this->actingAs($this->utp)
-            ->get(route('actas.download', $actaConductual))
-            ->assertForbidden();
-
-        // UTP es solo lectora del módulo
+        // Requisito actualizado HU-05: UTP no accede aunque el contenido sea pedagógico
+        $this->actingAs($this->utp)->get(route('actas.index'))->assertForbidden();
+        $this->actingAs($this->utp)->get(route('actas.download', $actaPedagogica))->assertForbidden();
         $this->actingAs($this->utp)->get(route('actas.create'))->assertForbidden();
+        $this->actingAs($this->utp)->delete(route('actas.destroy', $actaPedagogica))->assertForbidden();
 
-        // Dirección ve ambos ámbitos
+        // Dirección mantiene la consulta
         $this->actingAs($this->directora)
             ->get(route('actas.index'))
             ->assertOk()
-            ->assertSee('Acta Confidencial Conductual Privada');
+            ->assertSee('Acta Compromiso Pedagogico UTP');
     }
 
     public function test_busqueda_de_actas_por_run(): void

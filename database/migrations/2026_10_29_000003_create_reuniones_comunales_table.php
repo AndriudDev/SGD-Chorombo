@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('categoria', 40);               // 'red_utp' | 'reunion_directores' | 'mesa_convivencia' | 'daem_slep'
             $table->date('fecha');
             $table->text('descripcion')->nullable();
-            $table->string('archivo', 255)->nullable();     // Minuta, orientación o presentación (obligatoria por validación al crear)
+            $table->string('archivo', 255)->nullable();     // Minuta, presentación o fotografía del acta (opcional: "cuando exista", HU-06)
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
 

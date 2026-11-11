@@ -4,7 +4,7 @@
     @php
         $user = auth()->user();
         $esGestor = $user->hasAnyRole(['convivencia', 'directora']);
-        $esUtp = $user->hasRole('utp');
+        $esDirectora = $user->hasRole('directora');
         $coloresAmbito = ['conductual' => 'bg-danger', 'pedagogico' => 'bg-primary', 'administrativo' => 'bg-secondary'];
     @endphp
 
@@ -22,28 +22,19 @@
         @endif
     </div>
 
-    @if ($esUtp)
-        <div class="alert alert-info py-2 small">
-            <i class="bi bi-info-circle me-1"></i>
-            Jefatura de UTP: consulta restringida a acuerdos de ámbito pedagógico.
-        </div>
-    @endif
-
     {{-- Filters --}}
     <div class="card filter-card mb-3">
         <div class="card-body">
             <form method="GET" action="{{ route('actas.index') }}" class="row g-3">
-                @unless ($esUtp)
-                    <div class="col-md-3">
-                        <label for="ambito" class="form-label">Ámbito</label>
-                        <select name="ambito" id="ambito" class="form-select">
-                            <option value="">Todos</option>
-                            @foreach (\App\Models\ActaConfidencial::AMBITOS as $clave => $etiqueta)
-                                <option value="{{ $clave }}" {{ request()->input('ambito') === $clave ? 'selected' : '' }}>{{ $etiqueta }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                @endunless
+                <div class="col-md-3">
+                    <label for="ambito" class="form-label">Ámbito</label>
+                    <select name="ambito" id="ambito" class="form-select">
+                        <option value="">Todos</option>
+                        @foreach (\App\Models\ActaConfidencial::AMBITOS as $clave => $etiqueta)
+                            <option value="{{ $clave }}" {{ request()->input('ambito') === $clave ? 'selected' : '' }}>{{ $etiqueta }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="col-md-3">
                     <label for="categoria" class="form-label">Categoría</label>
                     <select name="categoria" id="categoria" class="form-select">
@@ -53,7 +44,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="{{ $esUtp ? 'col-md-7' : 'col-md-4' }}">
+                <div class="col-md-4">
                     <label for="search" class="form-label">Buscar</label>
                     <input type="text"
                            class="form-control"
@@ -83,6 +74,9 @@
                             <th>Apoderado</th>
                             <th>Ámbito</th>
                             <th>Categoría</th>
+                            @if ($esDirectora)
+                                <th>Nº Reserva</th>
+                            @endif
                             <th>Fecha</th>
                             <th class="text-end">Acciones</th>
                         </tr>
@@ -106,6 +100,9 @@
                                         {{ \App\Models\ActaConfidencial::CATEGORIAS[$acta->categoria] ?? $acta->categoria }}
                                     </span>
                                 </td>
+                                @if ($esDirectora)
+                                    <td>{{ $acta->numero_reserva ?? '—' }}</td>
+                                @endif
                                 <td>{{ $acta->fecha->format('d/m/Y') }}</td>
                                 <td class="text-end">
                                     <a href="{{ route('actas.download', $acta->id) }}"
@@ -140,7 +137,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted py-4">
+                                <td colspan="{{ $esDirectora ? 8 : 7 }}" class="text-center text-muted py-4">
                                     No hay actas de acuerdos registradas.
                                 </td>
                             </tr>

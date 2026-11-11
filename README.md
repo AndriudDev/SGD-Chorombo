@@ -29,7 +29,7 @@ Slugs internos (usados en rutas y middleware): `directora`, `inspectoria`, `admi
 |---|---|
 | **Memos y oficios** | **Crean y ven:** todos los usuarios autenticados (sin restricción de rol). **Editan/eliminan:** solo el autor o Administración. |
 | **Citaciones** | **Crean:** Convivencia, Secretaría de Dirección y Dirección. **Ven:** Administración, Dirección, Secretaría de Dirección, UTP y Convivencia. Inspectoría: sin acceso (403). |
-| **Actas confidenciales** | **Crean:** Convivencia y Dirección. **Ven:** Convivencia, Dirección y UTP (UTP solo ámbito pedagógico). Secretaría de Dirección, Administración e Inspectoría: sin acceso (403). |
+| **Actas confidenciales** | **Crean:** Convivencia y Dirección. **Ven:** Convivencia y Dirección. UTP no accede a reservados, ni siquiera en ámbito pedagógico. Secretaría de Dirección, Administración e Inspectoría: sin acceso (403). |
 | **Reuniones comunales** | **Crean:** UTP y Dirección. **Ven:** Administración, Dirección, Secretaría de Dirección, UTP y Convivencia. Inspectoría: sin acceso (403). |
 | **Permisos administrativos** | **Crean:** los 6 roles — Dirección, Administración e Inspectoría para cualquier funcionario; el resto solo su propia solicitud. **Ven:** Dirección, Administración e Inspectoría ven las de todos; el resto solo las propias. **Aprueban/rechazan/editan/eliminan:** Dirección, Administración e Inspectoría. |
 | **Usuarios** | **Crean/editan/eliminan:** Administración, Dirección e Inspectoría General. El resto: sin acceso (403). |
@@ -55,7 +55,7 @@ Implementada, migrada y con evidencias de QA en [`tests/Evidence/`](tests/Eviden
 - CRUD de memos/oficios con filtros por tipo y búsqueda, folio automático por serie+año y descarga del adjunto (PDF/Word/imagen)
 - Solicitudes de permisos con estados, respaldo adjunto descargable, aprobación/rechazo, revocación de aprobadas (Dirección/Administración), contador de días usados y disponibles e historial de auditoría de cada transición
 - Citaciones a apoderados con seguimiento de estados, filtros y adjunto (HU-04)
-- Actas confidenciales con acceso restringido por rol y ámbito (HU-05)
+- Actas confidenciales con acceso restringido por rol, archivos en disco privado (sin enlaces públicos) y numeración reservada asignada por Dirección (HU-05)
 - Repositorio de reuniones comunales con compromisos y fechas límite (HU-06)
 - Sidebar y tarjetas del dashboard adaptados a los permisos de cada rol
 - Middleware `CheckRole` protege todas las rutas administrativas y de gestión de permisos
@@ -67,9 +67,9 @@ Implementada, migrada y con evidencias de QA en [`tests/Evidence/`](tests/Eviden
 
 Implementada, migrada y con evidencia de QA en [`tests/Evidence/`](tests/Evidence):
 
-- **HU-04 (Citaciones a Apoderados):** Registro con RUN/Nombre del estudiante, apoderado, funcionario que cita, fecha/hora y motivo (conductual, pedagógico, administrativo). Adjunto opcional —copia firmada o colilla— de hasta 15 MB en `storage/app/public/citaciones`. Estados de seguimiento `programada` / `asistio` / `no_asistio` / `reprogramada` gestionados con `PATCH /citaciones/{id}/estado`. Emisión (crear, editar, eliminar y actualizar estado) solo para Convivencia, Secretaría de Dirección y Dirección; consulta y descarga para Administración, Dirección, Secretaría de Dirección, UTP y Convivencia (Inspectoría: sin acceso), con filtros por estado, motivo y búsqueda por estudiante/RUN/apoderado.
-- **HU-05 (Actas Confidenciales):** Actas de acuerdos con apoderados categorizadas `confidencial` / `sensible`, con ámbito (conductual, pedagógico, administrativo), archivo firmado obligatorio y búsqueda por nombre o RUN del estudiante. Acceso estricto: Convivencia y Dirección gestionan; UTP solo consulta y descarga actas de ámbito pedagógico; Secretaría de Dirección, Administración e Inspectoría reciben 403.
-- **HU-06 (Reuniones Comunales):** Repositorio categorizado (Red de UTP, Reunión de Directores, Mesa Comunal de Convivencia, DAEM/SLEP) con minuta u orientación adjunta y compromisos registrados con fecha límite de entrega institucional. La carga de reuniones y compromisos es de UTP y Dirección; Administración, Dirección, Secretaría de Dirección, UTP y Convivencia consultan y descargan (Inspectoría: sin acceso).
+- **HU-04 (Citaciones a Apoderados):** Registro con RUN/Nombre del estudiante, apoderado, funcionario que cita, fecha/hora y motivo (conductual, pedagógico, administrativo). Adjunto opcional —copia firmada, colilla o fotografía del documento— de hasta 15 MB en `storage/app/public/citaciones`. Estados de seguimiento `programada` / `asistio` / `no_asistio` / `reprogramada` gestionados con `PATCH /citaciones/{id}/estado`. Emisión (crear, editar, eliminar y actualizar estado) solo para Convivencia, Secretaría de Dirección y Dirección; consulta y descarga para Administración, Dirección, Secretaría de Dirección, UTP y Convivencia (Inspectoría: sin acceso), con filtros por estado, motivo y búsqueda por estudiante/RUN/apoderado.
+- **HU-05 (Actas Confidenciales):** Actas de acuerdos con apoderados categorizadas `confidencial` / `sensible`, con ámbito (conductual, pedagógico, administrativo), archivo firmado obligatorio y búsqueda por nombre o RUN del estudiante. Acceso estricto: Convivencia y Dirección gestionan y consultan; UTP no accede a reservados aunque el contenido sea pedagógico; Secretaría de Dirección, Administración e Inspectoría reciben 403. Los archivos se guardan en disco privado (`storage/app/private/actas`) y se sirven solo por la ruta autorizada; la numeración reservada (`numero_reserva`) la asigna y modifica únicamente Dirección.
+- **HU-06 (Reuniones Comunales):** Repositorio categorizado (Red de UTP, Reunión de Directores, Mesa Comunal de Convivencia, DAEM/SLEP) con adjunto opcional —minuta, orientación o fotografía del acta manuscrita (JPG/PNG)— y compromisos registrados con fecha límite de entrega institucional. Búsqueda por fecha, categoría o texto. La carga de reuniones y compromisos es de UTP y Dirección; Administración, Dirección, Secretaría de Dirección, UTP y Convivencia consultan y descargan (Inspectoría: sin acceso).
 
 ### Próximas fases
 
@@ -218,7 +218,7 @@ docker compose exec -T mysql mysql -usail -ppassword sgd_chorombo -e "SELECT * F
 | POST | `/permisos-administrativos/{id}/revocar` | `role:administracion\|directora` |
 | GET | `/citaciones` · `/{id}` · `/{id}/download` | `role:administracion\|directora\|secretaria\|utp\|convivencia` (lectura) |
 | GET/POST/PUT/DELETE/PATCH | `/citaciones/create` · `/{id}/edit` · `/{id}` · `/{id}/estado` | `role:convivencia\|secretaria\|directora` (emisión) |
-| GET | `/actas-confidenciales` · `/{id}/download` | `role:convivencia\|directora\|utp` (UTP: solo ámbito pedagógico) |
+| GET | `/actas-confidenciales` · `/{id}/download` | `role:convivencia\|directora` (UTP sin acceso a reservados) |
 | GET/POST/PUT/DELETE | `/actas-confidenciales/create` · `/{id}/edit` · `/{id}` | `role:convivencia\|directora` |
 | GET | `/reuniones-comunales` · `/{id}` · `/{id}/download` | `role:administracion\|directora\|secretaria\|utp\|convivencia` (lectura) |
 | GET/POST/PUT/DELETE | `/reuniones-comunales/create` · `/{id}` · `/{id}/compromisos[...]` | `role:utp\|directora` (gestión) |
@@ -251,9 +251,10 @@ El proyecto usa PHPUnit 12 (`php artisan test`). Suites actuales:
 - `Fase1CorreccionesQaTest` (6 casos) — un solo rol por usuario y flujos de login (Fase 1)
 - `Fase2QaTest` (22 casos) / `Fase2RevalidacionQaTest` (6 casos) — permisos, memos y reglas de propiedad (Fase 2)
 - `Fase3QaTest` (10 casos) — citaciones, actas confidenciales y reuniones comunales (Fase 3)
+- `Fase3RequisitosActualizadosTest` (7 casos) — bloqueo UTP en reservados, disco privado sin enlaces públicos, numeración reservada de Dirección, fotografía de acta manuscrita, reunión sin archivo, filtro por fecha y respaldo fotográfico de citación (requisitos actualizados de Fase 3)
 - `PermisoTransicionesTest` (11 casos) — matriz de transiciones de permisos, roles de revocación, saldo e identidad auditada (REV-03)
 
-La suite completa (`php artisan test`) suma 78 tests / 365 aserciones; 76 en verde. Los 2 fallos restantes son pruebas obsoletas sin relación con esta materia (`Fase2RequisitosActualizadosTest::test_example` espera 200 en `/` que redirige al login, y `Fase2RevalidacionQaTest` espera el folio antiguo `MEM-001` frente al folio automático `MEMO-2026-0001`). Las corridas y hashes de las revisiones de QA quedan registrados en [`tests/Evidence/`](tests/Evidence/).
+La suite completa (`php artisan test`) suma 85 tests / 408 aserciones; 83 en verde. Los 2 fallos restantes son pruebas obsoletas sin relación con esta materia (`Fase2RequisitosActualizadosTest::test_example` espera 200 en `/` que redirige al login, y `Fase2RevalidacionQaTest` espera el folio antiguo `MEM-001` frente al folio automático `MEMO-2026-0001`). Las corridas y hashes de las revisiones de QA quedan registrados en [`tests/Evidence/`](tests/Evidence/).
 
 ### Convenciones de código
 

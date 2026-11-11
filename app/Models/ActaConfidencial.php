@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['titulo', 'categoria', 'ambito', 'estudiante_nombre', 'estudiante_run', 'apoderado_nombre', 'fecha', 'archivo', 'user_id'])]
+#[Fillable(['titulo', 'categoria', 'ambito', 'estudiante_nombre', 'estudiante_run', 'apoderado_nombre', 'fecha', 'numero_reserva', 'archivo', 'user_id'])]
 class ActaConfidencial extends Model
 {
     /** Clasificación de resguardo del documento (HU-05). */
@@ -16,7 +16,7 @@ class ActaConfidencial extends Model
         'sensible' => 'Sensible',
     ];
 
-    /** Ámbito del acuerdo; UTP solo consulta las de ámbito pedagógico (HU-05). */
+    /** Ámbito del acuerdo (clasificación del contenido, HU-05). */
     public const AMBITOS = [
         'conductual' => 'Conductual',
         'pedagogico' => 'Pedagógico',

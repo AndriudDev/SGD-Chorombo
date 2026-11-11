@@ -28,6 +28,9 @@ class ReunionComunalController extends Controller
         if ($categoria = request()->input('categoria')) {
             $query->byCategoria($categoria);
         }
+        if ($fecha = request()->input('fecha')) {
+            $query->whereDate('fecha', $fecha);
+        }
         if ($search = request()->input('search')) {
             $query->search($search);
         }
@@ -58,12 +61,14 @@ class ReunionComunalController extends Controller
             'user_id' => auth()->id(),
         ]);
 
-        $reunion->archivo = $this->archivoService->subir(
-            $request->file('archivo'),
-            'reuniones',
-            "reunion-{$reunion->id}-{$reunion->categoria}",
-        );
-        $reunion->save();
+        if ($request->hasFile('archivo')) {
+            $reunion->archivo = $this->archivoService->subir(
+                $request->file('archivo'),
+                'reuniones',
+                "reunion-{$reunion->id}-{$reunion->categoria}",
+            );
+            $reunion->save();
+        }
 
         return redirect()->route('comunales.show', $reunion)
             ->with('success', 'Reunión comunal registrada correctamente.');

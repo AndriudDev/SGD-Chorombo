@@ -90,10 +90,7 @@
 
                 <div class="mb-3">
                     <label for="archivo" class="form-label">
-                        Documento (minuta, orientación o presentación)
-                        @unless ($isEdit)
-                            <span class="required-asterisk">*</span>
-                        @endunless
+                        Documento o fotografía del acta (cuando exista)
                     </label>
                     @if ($isEdit && $reunion->archivo)
                         <div class="mb-2">
@@ -109,12 +106,11 @@
                            class="form-control @error('archivo') is-invalid @enderror"
                            id="archivo"
                            name="archivo"
-                           accept=".pdf,.ppt,.pptx,.doc,.docx"
-                           @unless ($isEdit) required @endunless>
+                           accept=".pdf,.ppt,.pptx,.doc,.docx,.jpg,.jpeg,.png">
                     @error('archivo')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
-                    <div class="form-text">Formatos permitidos: PDF, PPT, PPTX, DOC, DOCX. Tamaño máximo: 15 MB.</div>
+                    <div class="form-text">Minuta, orientación o presentación (PDF, PPT, PPTX, DOC, DOCX) o fotografía del acta manuscrita (JPG, PNG). Tamaño máximo: 15 MB.</div>
                 </div>
 
                 <hr>

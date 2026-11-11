@@ -81,7 +81,6 @@
                         @error('ambito')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
-                        <div class="form-text">Las actas de ámbito pedagógico también son consultables por la Jefatura de UTP.</div>
                     </div>
 
                     <div class="col-md-4 mb-3">
@@ -154,6 +153,23 @@
                         @enderror
                     </div>
                 </div>
+
+                @if (auth()->user()->hasRole('directora'))
+                    <div class="mb-3">
+                        <label for="numero_reserva" class="form-label">Numeración reservada</label>
+                        <input type="text"
+                               class="form-control @error('numero_reserva') is-invalid @enderror"
+                               id="numero_reserva"
+                               name="numero_reserva"
+                               value="{{ old('numero_reserva', $isEdit ? ($acta->numero_reserva ?? '') : '') }}"
+                               maxlength="50"
+                               placeholder="Nº asignado por Dirección al documento reservado">
+                        @error('numero_reserva')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <div class="form-text">La numeración reservada la asigna y modifica únicamente Dirección (HU-05).</div>
+                    </div>
+                @endif
 
                 <div class="mb-3">
                     <label for="archivo" class="form-label">
