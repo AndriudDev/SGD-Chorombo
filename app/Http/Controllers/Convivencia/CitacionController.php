@@ -161,6 +161,10 @@ class CitacionController extends Controller
      */
     public function download(Citacion $citacion): StreamedResponse
     {
+        if (! $citacion->archivo || ! Storage::disk('public')->exists($citacion->archivo)) {
+            abort(404, 'El respaldo de la citación no está disponible.');
+        }
+
         return Storage::disk('public')->download($citacion->archivo);
     }
 }

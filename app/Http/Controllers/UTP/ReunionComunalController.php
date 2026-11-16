@@ -135,6 +135,10 @@ class ReunionComunalController extends Controller
      */
     public function download(ReunionComunal $reunion): StreamedResponse
     {
+        if (! $reunion->archivo || ! Storage::disk('public')->exists($reunion->archivo)) {
+            abort(404, 'El documento de la reunión no está disponible.');
+        }
+
         return Storage::disk('public')->download($reunion->archivo);
     }
 }

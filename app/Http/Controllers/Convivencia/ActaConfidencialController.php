@@ -140,6 +140,19 @@ class ActaConfidencialController extends Controller
      */
     public function download(ActaConfidencial $acta): StreamedResponse
     {
+        // QA-F3-001: los archivos históricos quedaron en el disco público antes de la
+        // migración a private; se trasladan al disco privado la primera vez que se piden.
+        if ($acta->archivo
+            && ! Storage::disk('local')->exists($acta->archivo)
+            && Storage::disk('public')->exists($acta->archivo)) {
+            Storage::disk('local')->put($acta->archivo, Storage::disk('public')->get($acta->archivo));
+            Storage::disk('public')->delete($acta->archivo);
+        }
+
+        if (! $acta->archivo || ! Storage::disk('local')->exists($acta->archivo)) {
+            abort(404, 'El archivo del acta no está disponible.');
+        }
+
         return Storage::disk('local')->download($acta->archivo);
     }
 }

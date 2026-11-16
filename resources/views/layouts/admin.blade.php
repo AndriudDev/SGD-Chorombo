@@ -46,13 +46,15 @@
                         <span class="sidebar-label">Memos y Oficios</span>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a href="{{ route('citaciones.index') }}"
-                       class="nav-link {{ request()->routeIs('citaciones.*') ? 'active' : '' }}">
-                        <i class="bi bi-person-lines-fill"></i>
-                        <span class="sidebar-label">Citaciones</span>
-                    </a>
-                </li>
+                @if (auth()->user()->hasAnyRole(['administracion', 'directora', 'secretaria', 'utp', 'convivencia']))
+                    <li class="nav-item">
+                        <a href="{{ route('citaciones.index') }}"
+                           class="nav-link {{ request()->routeIs('citaciones.*') ? 'active' : '' }}">
+                            <i class="bi bi-person-lines-fill"></i>
+                            <span class="sidebar-label">Citaciones</span>
+                        </a>
+                    </li>
+                @endif
                 @if (auth()->user()->hasAnyRole(['convivencia', 'directora']))
                     <li class="nav-item">
                         <a href="{{ route('actas.index') }}"
@@ -62,13 +64,15 @@
                         </a>
                     </li>
                 @endif
-                <li class="nav-item">
-                    <a href="{{ route('comunales.index') }}"
-                       class="nav-link {{ request()->routeIs('comunales.*') ? 'active' : '' }}">
-                        <i class="bi bi-people"></i>
-                        <span class="sidebar-label">Reuniones Comunales</span>
-                    </a>
-                </li>
+                @if (auth()->user()->hasAnyRole(['administracion', 'directora', 'secretaria', 'utp', 'convivencia']))
+                    <li class="nav-item">
+                        <a href="{{ route('comunales.index') }}"
+                           class="nav-link {{ request()->routeIs('comunales.*') ? 'active' : '' }}">
+                            <i class="bi bi-people"></i>
+                            <span class="sidebar-label">Reuniones Comunales</span>
+                        </a>
+                    </li>
+                @endif
                 @if (auth()->user()->hasAnyRole(['administracion', 'directora', 'inspectoria', 'secretaria', 'utp', 'convivencia']))
                     <li class="nav-item">
                         <a href="{{ route('permisos.index') }}"

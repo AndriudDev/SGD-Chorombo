@@ -89,11 +89,13 @@
                                        title="Ver y gestionar compromisos">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a href="{{ route('comunales.download', $reunion->id) }}"
-                                       class="btn btn-sm btn-outline-primary me-1"
-                                       title="Descargar documento">
-                                        <i class="bi bi-download"></i>
-                                    </a>
+                                    @if ($reunion->archivo)
+                                        <a href="{{ route('comunales.download', $reunion->id) }}"
+                                           class="btn btn-sm btn-outline-primary me-1"
+                                           title="Descargar documento">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                    @endif
                                     @if ($puedeGestionar)
                                         <a href="{{ route('comunales.edit', $reunion->id) }}"
                                            class="btn btn-sm btn-outline-secondary me-1"
