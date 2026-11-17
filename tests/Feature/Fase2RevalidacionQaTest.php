@@ -33,7 +33,6 @@ class Fase2RevalidacionQaTest extends TestCase
         $secretaria = $this->userWithRole('secretaria', 'Secretaría');
 
         $response = $this->actingAs($secretaria)->post(route('memos.store'), [
-            'folio' => 'MEM-001',
             'tipo' => 'memo',
             'fecha' => '2026-10-25',
             'destinatario' => 'Dirección Escolar',
@@ -43,12 +42,12 @@ class Fase2RevalidacionQaTest extends TestCase
 
         $response->assertRedirect(route('memos.index'));
         $this->assertDatabaseHas('memos', [
-            'folio' => 'MEM-001',
+            'folio' => 'MEMO-2026-0001',
             'tipo' => 'memo',
             'user_id' => $secretaria->id,
         ]);
 
-        $memo = Memo::where('folio', 'MEM-001')->firstOrFail();
+        $memo = Memo::where('folio', 'MEMO-2026-0001')->firstOrFail();
         $this->assertNotNull($memo->archivo);
         Storage::disk('public')->assertExists($memo->archivo);
     }

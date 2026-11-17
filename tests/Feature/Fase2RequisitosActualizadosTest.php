@@ -7,12 +7,12 @@ use Tests\TestCase;
 class Fase2RequisitosActualizadosTest extends TestCase
 {
     /**
-     * A basic feature test example.
+     * The root URL redirects guests to the login page (public registration removed).
      */
     public function test_example(): void
     {
         $response = $this->get('/');
 
-        $response->assertStatus(200);
+        $response->assertRedirect(route('login'));
     }
 }
