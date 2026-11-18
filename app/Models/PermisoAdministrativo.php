@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class PermisoAdministrativo extends Model
 {
     use SoftDeletes;
+
     /**
      * Annual day quota per funcionario. Provisional value while the
      * definitive quota is confirmed with Dirección (HU-03).

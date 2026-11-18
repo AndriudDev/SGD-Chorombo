@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auditoria;
 use App\Http\Controllers\Controller;
 use App\Models\PermisoAdministrativo;
 use App\Models\User;
+use App\Services\DocumentosPermitidos;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;

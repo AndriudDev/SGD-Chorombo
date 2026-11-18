@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Citacion extends Model
 {
     use SoftDeletes;
+
     /** Motivos de citación (HU-04). */
     public const MOTIVOS = [
         'conductual' => 'Conductual',

@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class ActaConfidencial extends Model
 {
     use SoftDeletes;
+
     /** Clasificación de resguardo del documento (HU-05). */
     public const CATEGORIAS = [
         'confidencial' => 'Confidencial',

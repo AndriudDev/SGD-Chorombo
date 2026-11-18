@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class ReunionComunal extends Model
 {
     use SoftDeletes;
+
     /** Categorías de encuentro comunal (HU-06). */
     public const CATEGORIAS = [
         'red_utp' => 'Red de UTP',
