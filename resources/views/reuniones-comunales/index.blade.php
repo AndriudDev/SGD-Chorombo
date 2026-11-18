@@ -3,6 +3,7 @@
 @section('content')
     @php
         $puedeGestionar = auth()->user()->hasAnyRole(['utp', 'directora']);
+        $puedeEliminar = auth()->user()->hasAnyRole(['administracion', 'directora']);
         $coloresCategoria = ['red_utp' => 'bg-primary', 'reunion_directores' => 'bg-info text-dark', 'mesa_convivencia' => 'bg-warning text-dark', 'daem_slep' => 'bg-secondary'];
     @endphp
 
@@ -102,6 +103,9 @@
                                            title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
+                                    @endif
+                                    {{-- Eliminar (papelera HU-08) — Dirección y Administración --}}
+                                    @if ($puedeEliminar)
                                         <form action="{{ route('comunales.destroy', $reunion->id) }}"
                                               method="POST"
                                               class="d-inline">
@@ -111,7 +115,7 @@
                                                     class="btn btn-sm btn-outline-danger"
                                                     title="Eliminar"
                                                     data-confirm-modal
-                                                    data-confirm-message="¿Está seguro de eliminar la reunión «{{ $reunion->titulo }}»? Sus compromisos también se eliminarán."
+                                                    data-confirm-message="¿Está seguro de eliminar la reunión «{{ $reunion->titulo }}»? Se enviará a la papelera junto con sus compromisos y podrá recuperarse."
                                                     data-confirm-btn="Eliminar"
                                                     data-confirm-icon="bi-trash"
                                                     data-confirm-btn-class="btn-danger">

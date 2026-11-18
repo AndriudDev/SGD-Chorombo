@@ -3,6 +3,7 @@
 @section('content')
     @php
         $puedeEmitir = auth()->user()->hasAnyRole(['convivencia', 'secretaria', 'directora']);
+        $puedeEliminar = auth()->user()->hasAnyRole(['administracion', 'directora']);
         $coloresMotivo = ['conductual' => 'bg-danger', 'pedagogico' => 'bg-primary', 'administrativo' => 'bg-secondary'];
         $coloresEstado = ['programada' => 'bg-warning text-dark', 'asistio' => 'bg-success', 'no_asistio' => 'bg-danger', 'reprogramada' => 'bg-info text-dark'];
     @endphp
@@ -107,6 +108,9 @@
                                            title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
+                                    @endif
+                                    {{-- Eliminar (papelera HU-08) — Dirección y Administración --}}
+                                    @if ($puedeEliminar)
                                         <form action="{{ route('citaciones.destroy', $citacion->id) }}"
                                               method="POST"
                                               class="d-inline">
@@ -116,7 +120,7 @@
                                                     class="btn btn-sm btn-outline-danger me-1"
                                                     title="Eliminar"
                                                     data-confirm-modal
-                                                    data-confirm-message="¿Está seguro de eliminar la citación a {{ $citacion->apoderado_nombre }} del {{ $citacion->fecha->format('d/m/Y') }}? Esta acción no se puede deshacer."
+                                                    data-confirm-message="¿Está seguro de eliminar la citación a {{ $citacion->apoderado_nombre }} del {{ $citacion->fecha->format('d/m/Y') }}? Se enviará a la papelera y podrá recuperarse."
                                                     data-confirm-btn="Eliminar"
                                                     data-confirm-icon="bi-trash"
                                                     data-confirm-btn-class="btn-danger">

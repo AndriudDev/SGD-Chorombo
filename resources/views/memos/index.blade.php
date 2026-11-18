@@ -4,6 +4,7 @@
     @php
         $user = auth()->user();
         $esAdministracion = $user->hasAnyRole(['administracion']);
+        $puedeEliminar = $user->hasAnyRole(['administracion', 'directora', 'inspectoria']);
     @endphp
     <div class="d-flex justify-content-between align-items-center sgd-page-header">
         <h1 class="h3">Memos y Oficios</h1>
@@ -101,13 +102,16 @@
                                        title="Ver">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    {{-- Editar/Eliminar — solo el autor del memo o Administración (misma regla que el backend) --}}
+                                    {{-- Editar — autor o Administración (misma regla que el backend) --}}
                                     @if ($esAdministracion || $memo->user_id === $user->id)
                                         <a href="{{ route('memos.edit', $memo->id) }}"
                                            class="btn btn-sm btn-outline-secondary me-1"
                                            title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
+                                    @endif
+                                    {{-- Eliminar (papelera HU-08) — Dirección, Inspectoría y Administración --}}
+                                    @if ($puedeEliminar)
                                         <form action="{{ route('memos.destroy', $memo->id) }}"
                                               method="POST"
                                               class="d-inline">
@@ -117,7 +121,7 @@
                                                     class="btn btn-sm btn-outline-danger me-1"
                                                     title="Eliminar"
                                                     data-confirm-modal
-                                                    data-confirm-message="¿Está seguro de eliminar el memo/oficio «{{ $memo->folio }}»? Esta acción no se puede deshacer."
+                                                    data-confirm-message="¿Está seguro de eliminar el memo/oficio «{{ $memo->folio }}»? Se enviará a la papelera y podrá recuperarse."
                                                     data-confirm-btn="Eliminar"
                                                     data-confirm-icon="bi-trash"
                                                     data-confirm-btn-class="btn-danger">

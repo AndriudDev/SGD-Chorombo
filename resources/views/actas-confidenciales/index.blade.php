@@ -5,6 +5,7 @@
         $user = auth()->user();
         $esGestor = $user->hasAnyRole(['convivencia', 'directora']);
         $esDirectora = $user->hasRole('directora');
+        $puedeEliminar = $esDirectora; // HU-08: Convivencia carga/edita pero no elimina
         $coloresAmbito = ['conductual' => 'bg-danger', 'pedagogico' => 'bg-primary', 'administrativo' => 'bg-secondary'];
     @endphp
 
@@ -116,6 +117,9 @@
                                            title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
+                                    @endif
+                                    {{-- Eliminar (papelera HU-08) — solo Dirección --}}
+                                    @if ($puedeEliminar)
                                         <form action="{{ route('actas.destroy', $acta->id) }}"
                                               method="POST"
                                               class="d-inline">
@@ -125,7 +129,7 @@
                                                     class="btn btn-sm btn-outline-danger"
                                                     title="Eliminar"
                                                     data-confirm-modal
-                                                    data-confirm-message="¿Está seguro de eliminar el acta «{{ $acta->titulo }}»? Esta acción no se puede deshacer."
+                                                    data-confirm-message="¿Está seguro de eliminar el acta «{{ $acta->titulo }}»? Se enviará a la papelera y podrá recuperarse."
                                                     data-confirm-btn="Eliminar"
                                                     data-confirm-icon="bi-trash"
                                                     data-confirm-btn-class="btn-danger">

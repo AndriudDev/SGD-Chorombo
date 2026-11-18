@@ -3,14 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['user_id', 'fecha_inicio', 'fecha_fin', 'tipo_jornada', 'motivo', 'archivo', 'estado', 'aprobado_por', 'created_by'])]
 class PermisoAdministrativo extends Model
 {
+    use SoftDeletes;
     /**
      * Annual day quota per funcionario. Provisional value while the
      * definitive quota is confirmed with Dirección (HU-03).
@@ -120,5 +123,63 @@ class PermisoAdministrativo extends Model
     public static function byEstado(string $estado)
     {
         return self::where('estado', $estado);
+    }
+
+    /**
+     * Scope: search in motivo and funcionario name (HU-07).
+     */
+    public function scopeSearch(Builder $query, string $search): Builder
+    {
+        return $query->where(function (Builder $q) use ($search) {
+            $q->where('motivo', 'LIKE', "%{$search}%")
+                ->orWhereHas('user', fn (Builder $usuario) => $usuario->where('name', 'LIKE', "%{$search}%"));
+        });
+    }
+
+    /**
+     * Scope: filter by the user who registered the solicitud (HU-07 emisor).
+     */
+    public function scopeByEmisor(Builder $query, int $userId): Builder
+    {
+        return $query->where('created_by', $userId);
+    }
+
+    /**
+     * Scope: fecha_inicio within an inclusive range (HU-07 rango de fechas).
+     */
+    public function scopeEntreFechas(Builder $query, ?string $desde, ?string $hasta): Builder
+    {
+        if ($desde) {
+            $query->whereDate('fecha_inicio', '>=', $desde);
+        }
+        if ($hasta) {
+            $query->whereDate('fecha_inicio', '<=', $hasta);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Human-readable identifier for the audit trail (HU-08).
+     */
+    public function etiquetaAuditoria(): string
+    {
+        return "Permiso: {$this->motivo} ({$this->fecha_inicio->format('d/m/Y')} al {$this->fecha_fin->format('d/m/Y')})";
+    }
+
+    /**
+     * Reference that identifies the file in search results (HU-07).
+     */
+    public function referencia(): string
+    {
+        return "#{$this->id}";
+    }
+
+    /**
+     * Storage disk holding the attachment.
+     */
+    public function discoArchivo(): string
+    {
+        return 'public';
     }
 }

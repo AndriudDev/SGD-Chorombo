@@ -63,7 +63,8 @@ class CorrespondenciaService
     {
         $siguiente = 1;
 
-        Memo::where('tipo', $tipo)
+        Memo::withTrashed()
+            ->where('tipo', $tipo)
             ->whereYear('fecha', $year)
             ->pluck('folio')
             ->each(function (string $folio) use (&$siguiente) {

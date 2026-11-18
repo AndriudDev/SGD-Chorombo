@@ -3,6 +3,7 @@
 @section('content')
     @php
         $puedeGestionar = auth()->user()->hasAnyRole(['utp', 'directora']);
+        $puedeEliminar = auth()->user()->hasAnyRole(['administracion', 'directora']);
         $coloresCategoria = ['red_utp' => 'bg-primary', 'reunion_directores' => 'bg-info text-dark', 'mesa_convivencia' => 'bg-warning text-dark', 'daem_slep' => 'bg-secondary'];
     @endphp
 
@@ -48,25 +49,30 @@
                         </dd>
                     </dl>
 
-                    @if ($puedeGestionar)
+                    @if ($puedeGestionar || $puedeEliminar)
                         <hr>
                         <div class="d-flex gap-2">
-                            <a href="{{ route('comunales.edit', $reunion->id) }}" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-pencil me-1"></i> Editar
-                            </a>
-                            <form action="{{ route('comunales.destroy', $reunion->id) }}" method="POST" class="d-inline">
-                                @csrf
-                                @method('DELETE')
-                                <button type="button"
-                                        class="btn btn-outline-danger btn-sm"
-                                        data-confirm-modal
-                                        data-confirm-message="¿Está seguro de eliminar la reunión «{{ $reunion->titulo }}»? Sus compromisos también se eliminarán."
-                                        data-confirm-btn="Eliminar"
-                                        data-confirm-icon="bi-trash"
-                                        data-confirm-btn-class="btn-danger">
-                                    <i class="bi bi-trash me-1"></i> Eliminar
-                                </button>
-                            </form>
+                            @if ($puedeGestionar)
+                                <a href="{{ route('comunales.edit', $reunion->id) }}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-pencil me-1"></i> Editar
+                                </a>
+                            @endif
+                            {{-- Eliminar (papelera HU-08) — Dirección y Administración --}}
+                            @if ($puedeEliminar)
+                                <form action="{{ route('comunales.destroy', $reunion->id) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="button"
+                                            class="btn btn-outline-danger btn-sm"
+                                            data-confirm-modal
+                                            data-confirm-message="¿Está seguro de eliminar la reunión «{{ $reunion->titulo }}»? Se enviará a la papelera junto con sus compromisos y podrá recuperarse."
+                                            data-confirm-btn="Eliminar"
+                                            data-confirm-icon="bi-trash"
+                                            data-confirm-btn-class="btn-danger">
+                                        <i class="bi bi-trash me-1"></i> Eliminar
+                                    </button>
+                                </form>
+                            @endif
                         </div>
                     @endif
                 </div>

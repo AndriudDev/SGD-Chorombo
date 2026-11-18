@@ -46,7 +46,7 @@ Slugs internos (usados en rutas y middleware): `directora`, `inspectoria`, `admi
 
 Implementada, migrada y con evidencias de QA en [`tests/Evidence/`](tests/Evidence/):
 
-- **HU-02 (Memos y Oficios):** Registro con folio asignado automáticamente por el sistema (serie + año, p. ej. `MEMO-2026-0001`), Tipo (`memo`/`oficio`), Fecha, Destinatario y Asunto. Adjunto opcional PDF/Word o imagen (JPG/JPEG/PNG/WEBP) de hasta 15 MB en `storage/app/public` (disco `public`), con descarga por ruta dedicada. Unicidad de folio por serie (tipo) y año validada en backend (`CorrespondenciaService::validarFolioUnico`); el folio se regenera si cambia el tipo o el año de la fecha al editar. Solo el autor o el rol Administración pueden editar/eliminar un memo.
+- **HU-02 (Memos y Oficios):** Registro con folio asignado automáticamente por el sistema (serie + año, p. ej. `MEMO-2026-0001`), Tipo (`memo`/`oficio`), Fecha, Destinatario y Asunto. Adjunto opcional PDF/Word o imagen (JPG/JPEG/PNG/WEBP) de hasta 15 MB en `storage/app/public` (disco `public`), con descarga por ruta dedicada. Unicidad de folio por serie (tipo) y año validada en backend (`CorrespondenciaService::validarFolioUnico`); el folio se regenera si cambia el tipo o el año de la fecha al editar. Solo el autor o el rol Administración pueden editar un memo; eliminarlo (papelera) exige Dirección, Inspectoría General o Administración (HU-08).
 - **HU-03 (Permisos Administrativos):** Solicitud con funcionario, fechas, jornada completa o media, motivo y respaldo documental opcional (PDF/Word/imagen, hasta 15 MB, descarga por ruta dedicada). Estados `pendiente` / `aprobado` / `rechazado` / `revocada` con matriz de transiciones en servidor (`PermisoAdministrativo::TRANSICIONES`, REV-03): una solicitud `aprobada` ya no puede rechazarse directamente, solo revocarse vía `/revocar` (Dirección y Administración), lo que devuelve los días al saldo. Aprobación y rechazo (`/aprobar`, `/rechazar`) restringidos a Dirección, Administración e Inspectoría. `aprobado_por` identifica solo al aprobador original; cada transición queda registrada en `permiso_transiciones` con su actor (historial de auditoría). Secretaría, UTP y Convivencia solo ven sus propias solicitudes; Dirección, Administración e Inspectoría ven las de todo el equipo con días usados y disponibles por funcionario (cupo anual provisional de 10 días, `PermisoAdministrativo::CUPO_ANUAL`). Badge de solicitudes pendientes solo para perfiles autorizados; las solicitudes pendientes o rechazadas no descuentan días.
 
 **Funciona hoy:**
@@ -71,16 +71,21 @@ Implementada, migrada y con evidencia de QA en [`tests/Evidence/`](tests/Evidenc
 - **HU-05 (Actas Confidenciales):** Actas de acuerdos con apoderados categorizadas `confidencial` / `sensible`, con ámbito (conductual, pedagógico, administrativo), archivo firmado obligatorio y búsqueda por nombre o RUN del estudiante. Acceso estricto: Convivencia y Dirección gestionan y consultan; UTP no accede a reservados aunque el contenido sea pedagógico; Secretaría de Dirección, Administración e Inspectoría reciben 403. Los archivos se guardan en disco privado (`storage/app/private/actas`) y se sirven solo por la ruta autorizada; la numeración reservada (`numero_reserva`) la asigna y modifica únicamente Dirección.
 - **HU-06 (Reuniones Comunales):** Repositorio categorizado (Red de UTP, Reunión de Directores, Mesa Comunal de Convivencia, DAEM/SLEP) con adjunto opcional —minuta, orientación o fotografía del acta manuscrita (JPG/PNG)— y compromisos registrados con fecha límite de entrega institucional. Búsqueda por fecha, categoría o texto. La carga de reuniones y compromisos es de UTP y Dirección; Administración, Dirección, Secretaría de Dirección, UTP y Convivencia consultan y descargan (Inspectoría: sin acceso).
 
+### Fase 4 — Trazabilidad, Búsqueda Avanzada y Auditoría ✅
+
+Implementada, migrada y con evidencia de QA en [`tests/Evidence/`](tests/Evidence):
+
+- **HU-07 (Búsqueda y Filtros):** buscador global `/buscador` con filtros combinables por texto/referencia (asunto, título, folio, nombre o RUN), rango de fechas, tipo de documento, emisor y estado; resultados paginados que muestran la referencia que identifica cada archivo. Los resultados se limitan a los módulos que el usuario puede leer: las actas confidenciales jamás aparecen para perfiles excluidos (HU-05) y Inspectoría no ve citaciones ni reuniones (HU-04/HU-06). En permisos se replica la visibilidad fila a fila (los no supervisores solo ven los propios). Búsqueda rápida también en la barra superior.
+- **HU-08 (Bitácora y Papelera):** eliminación lógica (`SoftDeletes`) en los cinco módulos documentales: eliminar envía a papelera y conserva el archivo; la restauración y la purga definitiva (que sí borra el archivo) viven en `/papelera`. La eliminación queda restringida a Dirección, Inspectoría General y Administración intersectado con la lectura del módulo (memos y permisos: los tres; citaciones y reuniones: Dirección y Administración; actas reservadas: solo Dirección). La bitácora `/auditoria` registra cargas, ediciones con detalle `campo: anterior → nuevo`, descargas, eliminaciones, restauraciones y purgas con usuario, documento y marca de tiempo (`AuditoriaObserver`), filtrada por los módulos legibles del usuario. El folio de un memo en papelera no se reutiliza (`withTrashed`).
+
 ### Próximas fases
 
-| Fase | Objetivo |
-|---|---|
-| **Fase 4** | Búsqueda avanzada, papelera y auditoría (HU-07 y HU-08) |
+Todas las fases definidas en [`brief.md`](brief.md) están implementadas.
 
 ### Puntos por confirmar
 
-- **Edición/eliminación de memos (HU-02):** los requerimientos no definen quién edita memos; especifican solo "según autorización" y dejan el acceso concreto de cada módulo **pendiente de confirmación** (HU-01). La regla actual —*solo el autor o Administración pueden editar/eliminar*— es una decisión de implementación, no un requisito validado.
-- **Discrepancia con HU-08:** esta historia exige *"restringir la eliminación de documentos a Dirección e Inspectoría"*, pero hoy el autor **sí puede eliminar** su propio memo/oficio. Corresponde a Fase 4 (papelera y auditoría); deberá resolverse al implementarla.
+- **Edición de memos (HU-02):** los requerimientos no definen quién edita memos; especifican solo "según autorización" y dejan el acceso concreto de cada módulo **pendiente de confirmación** (HU-01). La regla actual —*solo el autor o Administración pueden editar* (la eliminación ya la fija HU-08: Dirección, Inspectoría o Administración)— es una decisión de implementación, no un requisito validado.
+- ~~**Discrepancia con HU-08**~~ **Resuelta en Fase 4:** la eliminación de documentos exige ahora `administracion|directora|inspectoria` (más lectura del módulo), incluso para el autor del memo; eliminar pasa por papelera con recuperación autorizada.
 
 Las historias de usuario actualizadas están en [`requerimientos.md`](requerimientos.md); el brief técnico original en [`brief.md`](brief.md).
 
@@ -97,7 +102,7 @@ app/
 │   │   ├── RRHH/              <-- Permisos Administrativos
 │   │   ├── Convivencia/       <-- Citaciones y Actas Sensibles
 │   │   ├── UTP/               <-- Reuniones Comunales y Redes
-│   │   └── Auditoria/         <-- Fase 4 (planificado): Buscador Avanzado y Bitácora
+│   │   └── Auditoria/         <-- Fase 4: Buscador global, bitácora y papelera (HU-07/HU-08)
 │   ├── Requests/              <-- Validaciones independientes
 │   └── Middleware/            <-- Control de acceso basado en roles
 ├── Models/                    <-- Modelos Eloquent
@@ -212,16 +217,23 @@ docker compose exec -T mysql mysql -usail -ppassword sgd_chorombo -e "SELECT * F
 | GET/POST/PUT/DELETE | `/admin/users[/{id}]` | `role:administracion\|directora\|inspectoria` |
 | GET | `/correspondencia/memos` · `/memos/{memo}` · `/memos/{memo}/download` | Autenticado |
 | GET | `/correspondencia/memos/create` · `/memos/{memo}/edit` | Autenticado (edición solo autor o Administración) |
-| POST/PUT/DELETE | `/correspondencia/memos[/{memo}]` | Autenticado (modificación solo autor o Administración) |
+| POST/PUT | `/correspondencia/memos[/{memo}]` | Autenticado (modificación solo autor o Administración) |
+| DELETE | `/correspondencia/memos/{memo}` | `role:administracion\|directora\|inspectoria` (papelera HU-08) |
 | GET/POST | `/permisos-administrativos[/create]` | `administracion\|directora\|secretaria\|utp\|convivencia` |
 | GET/PUT/DELETE/POST | `/permisos-administrativos/{id}/edit` · `/{id}` · `/aprobar` · `/rechazar` | `role:administracion\|directora\|inspectoria` |
 | POST | `/permisos-administrativos/{id}/revocar` | `role:administracion\|directora` |
 | GET | `/citaciones` · `/{id}` · `/{id}/download` | `role:administracion\|directora\|secretaria\|utp\|convivencia` (lectura) |
-| GET/POST/PUT/DELETE/PATCH | `/citaciones/create` · `/{id}/edit` · `/{id}` · `/{id}/estado` | `role:convivencia\|secretaria\|directora` (emisión) |
+| GET/POST/PUT/PATCH | `/citaciones/create` · `/{id}/edit` · `/{id}` · `/{id}/estado` | `role:convivencia\|secretaria\|directora` (emisión) |
+| DELETE | `/citaciones/{id}` | `role:administracion\|directora` (papelera HU-08) |
 | GET | `/actas-confidenciales` · `/{id}/download` | `role:convivencia\|directora` (UTP sin acceso a reservados) |
-| GET/POST/PUT/DELETE | `/actas-confidenciales/create` · `/{id}/edit` · `/{id}` | `role:convivencia\|directora` |
+| GET/POST/PUT | `/actas-confidenciales/create` · `/{id}/edit` · `/{id}` | `role:convivencia\|directora` |
+| DELETE | `/actas-confidenciales/{id}` | `role:directora` (papelera HU-08) |
 | GET | `/reuniones-comunales` · `/{id}` · `/{id}/download` | `role:administracion\|directora\|secretaria\|utp\|convivencia` (lectura) |
-| GET/POST/PUT/DELETE | `/reuniones-comunales/create` · `/{id}` · `/{id}/compromisos[...]` | `role:utp\|directora` (gestión) |
+| GET/POST/PUT | `/reuniones-comunales/create` · `/{id}` · `/{id}/compromisos[...]` | `role:utp\|directora` (gestión) |
+| DELETE | `/reuniones-comunales/{id}` | `role:administracion\|directora` (papelera HU-08) |
+| GET | `/buscador` | Autenticado (resultados limitados a los módulos legibles) |
+| GET | `/auditoria` · `/papelera` | `role:administracion\|directora\|inspectoria` |
+| POST/DELETE | `/papelera/{modulo}/restaurar/{id}` · `/papelera/{modulo}/{id}` | Set HU-08 ∩ lectura del módulo |
 
 ## Desarrollo
 
@@ -241,6 +253,9 @@ Las tablas siguen convención snake_case en plural:
 - `actas_confidenciales` — Actas de acuerdos con apoderados (confidencial/sensible)
 - `reuniones_comunales` — Reuniones comunales categorizadas con documento adjunto
 - `compromisos_reuniones` — Compromisos de cada reunión con fecha límite
+- `auditorias` — Bitácora HU-08: usuario, acción, tipo/id/nombre del documento, cambios (JSON) y marca de tiempo
+
+Además, `memos`, `permisos_administrativos`, `citaciones`, `actas_confidenciales` y `reuniones_comunales` incluyen `deleted_at` (SoftDeletes) para la papelera de la Fase 4.
 
 ### Pruebas
 
@@ -253,8 +268,9 @@ El proyecto usa PHPUnit 12 (`php artisan test`). Suites actuales:
 - `Fase3QaTest` (10 casos) — citaciones, actas confidenciales y reuniones comunales (Fase 3)
 - `Fase3RequisitosActualizadosTest` (7 casos) — bloqueo UTP en reservados, disco privado sin enlaces públicos, numeración reservada de Dirección, fotografía de acta manuscrita, reunión sin archivo, filtro por fecha y respaldo fotográfico de citación (requisitos actualizados de Fase 3)
 - `PermisoTransicionesTest` (11 casos) — matriz de transiciones de permisos, roles de revocación, saldo e identidad auditada (REV-03)
+- `Fase4QaTest` (11 casos) — buscador con filtros combinables y permisos de lectura, eliminación restringida HU-08 en los cinco módulos, papelera con restauración y purga definitiva, bitácora de cargas/ediciones/descargas/eliminaciones y su filtro por módulos legibles, y no reutilización de folios en papelera (Fase 4)
 
-La suite completa (`php artisan test`) suma 85 tests / 408 aserciones; 83 en verde. Los 2 fallos restantes son pruebas obsoletas sin relación con esta materia (`Fase2RequisitosActualizadosTest::test_example` espera 200 en `/` que redirige al login, y `Fase2RevalidacionQaTest` espera el folio antiguo `MEM-001` frente al folio automático `MEMO-2026-0001`). Las corridas y hashes de las revisiones de QA quedan registrados en [`tests/Evidence/`](tests/Evidence/).
+La suite completa (PHPUnit, corrida del 2026-11-18 sobre Sail/MySQL) suma **100 tests / 560 aserciones, todos en verde**. Las corridas y hashes de las revisiones de QA quedan registrados en [`tests/Evidence/`](tests/Evidence/).
 
 ### Convenciones de código
 

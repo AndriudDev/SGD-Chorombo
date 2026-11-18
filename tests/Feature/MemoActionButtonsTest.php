@@ -49,13 +49,15 @@ class MemoActionButtonsTest extends TestCase
             ->assertDontSee($this->confirmacionDeEliminacion(), false);
     }
 
-    public function test_index_muestra_editar_eliminar_al_autor_del_memo(): void
+    public function test_index_muestra_editar_y_oculta_eliminar_al_autor_del_memo(): void
     {
+        // HU-08: el autor edita su memo pero no lo elimina (solo Dirección,
+        // Inspectoría General y Administración eliminan documentos).
         $this->actingAs($this->autor)
             ->get(route('memos.index'))
             ->assertOk()
             ->assertSee(route('memos.edit', $this->memoAjeno->id), false)
-            ->assertSee($this->confirmacionDeEliminacion(), false);
+            ->assertDontSee($this->confirmacionDeEliminacion(), false);
     }
 
     public function test_index_muestra_editar_eliminar_a_administracion(): void
@@ -76,13 +78,14 @@ class MemoActionButtonsTest extends TestCase
             ->assertDontSee($this->confirmacionDeEliminacion(), false);
     }
 
-    public function test_show_muestra_editar_eliminar_al_autor_del_memo(): void
+    public function test_show_muestra_editar_y_oculta_eliminar_al_autor_del_memo(): void
     {
+        // HU-08: el autor edita su memo pero no lo elimina.
         $this->actingAs($this->autor)
             ->get(route('memos.show', $this->memoAjeno->id))
             ->assertOk()
             ->assertSee(route('memos.edit', $this->memoAjeno->id), false)
-            ->assertSee($this->confirmacionDeEliminacion(), false);
+            ->assertDontSee($this->confirmacionDeEliminacion(), false);
     }
 
     private function userWithRole(string $roleName, string $displayName): User

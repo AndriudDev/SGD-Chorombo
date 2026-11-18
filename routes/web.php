@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Auditoria\AuditoriaController;
+use App\Http\Controllers\Auditoria\BuscadorController;
+use App\Http\Controllers\Auditoria\PapeleraController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\Convivencia\ActaConfidencialController;
@@ -8,6 +11,7 @@ use App\Http\Controllers\Correspondencia\MemoController;
 use App\Http\Controllers\RRHH\PermisoAdminController;
 use App\Http\Controllers\UTP\CompromisoController;
 use App\Http\Controllers\UTP\ReunionComunalController;
+use App\Services\DocumentosPermitidos;
 use Illuminate\Support\Facades\Route;
 
 // Guest routes
@@ -41,7 +45,10 @@ Route::middleware('auth')->prefix('correspondencia')->group(function () {
     Route::get('memos/{memo}', [MemoController::class, 'show'])->name('memos.show');
     Route::get('memos/{memo}/edit', [MemoController::class, 'edit'])->name('memos.edit');
     Route::put('memos/{memo}', [MemoController::class, 'update'])->name('memos.update');
-    Route::delete('memos/{memo}', [MemoController::class, 'destroy'])->name('memos.destroy');
+    // Eliminación (papelera HU-08) — Dirección, Inspectoría General y Administración
+    Route::delete('memos/{memo}', [MemoController::class, 'destroy'])
+        ->middleware('role:administracion|directora|inspectoria')
+        ->name('memos.destroy');
     Route::get('memos/{memo}/download', [MemoController::class, 'download'])->name('memos.download');
 });
 
@@ -76,8 +83,12 @@ Route::middleware('auth')->prefix('citaciones')->group(function () {
         Route::get('{citacion}/edit', [CitacionController::class, 'edit'])->name('citaciones.edit');
         Route::put('{citacion}', [CitacionController::class, 'update'])->name('citaciones.update');
         Route::patch('{citacion}/estado', [CitacionController::class, 'actualizarEstado'])->name('citaciones.estado');
-        Route::delete('{citacion}', [CitacionController::class, 'destroy'])->name('citaciones.destroy');
     });
+
+    // Eliminación (papelera HU-08) — Dirección y Administración; Inspectoría no accede al módulo (HU-04)
+    Route::delete('{citacion}', [CitacionController::class, 'destroy'])
+        ->middleware('role:administracion|directora')
+        ->name('citaciones.destroy');
 
     // Consulta y descarga — todo el equipo directivo
     Route::middleware('role:administracion|directora|secretaria|utp|convivencia')->group(function () {
@@ -95,8 +106,13 @@ Route::middleware('auth')->prefix('actas-confidenciales')->group(function () {
         Route::post('/', [ActaConfidencialController::class, 'store'])->name('actas.store');
         Route::get('{acta}/edit', [ActaConfidencialController::class, 'edit'])->name('actas.edit');
         Route::put('{acta}', [ActaConfidencialController::class, 'update'])->name('actas.update');
-        Route::delete('{acta}', [ActaConfidencialController::class, 'destroy'])->name('actas.destroy');
     });
+
+    // Eliminación (papelera HU-08) — solo Dirección: junto a Convivencia es el único
+    // perfil con lectura de reservados (HU-05), y Convivencia no elimina documentos (HU-08)
+    Route::delete('{acta}', [ActaConfidencialController::class, 'destroy'])
+        ->middleware('role:directora')
+        ->name('actas.destroy');
 
     // Consulta y descarga — Convivencia y Dirección (HU-05: UTP no accede aunque sea ámbito pedagógico)
     Route::middleware('role:convivencia|directora')->group(function () {
@@ -113,12 +129,16 @@ Route::middleware('auth')->prefix('reuniones-comunales')->group(function () {
         Route::post('/', [ReunionComunalController::class, 'store'])->name('comunales.store');
         Route::get('{reunion}/edit', [ReunionComunalController::class, 'edit'])->name('comunales.edit');
         Route::put('{reunion}', [ReunionComunalController::class, 'update'])->name('comunales.update');
-        Route::delete('{reunion}', [ReunionComunalController::class, 'destroy'])->name('comunales.destroy');
         Route::post('{reunion}/compromisos', [CompromisoController::class, 'store'])->name('comunales.compromisos.store');
         Route::get('{reunion}/compromisos/{compromiso}/edit', [CompromisoController::class, 'edit'])->name('comunales.compromisos.edit');
         Route::put('{reunion}/compromisos/{compromiso}', [CompromisoController::class, 'update'])->name('comunales.compromisos.update');
         Route::delete('{reunion}/compromisos/{compromiso}', [CompromisoController::class, 'destroy'])->name('comunales.compromisos.destroy');
     });
+
+    // Eliminación (papelera HU-08) — Dirección y Administración; Inspectoría no accede al módulo (HU-06)
+    Route::delete('{reunion}', [ReunionComunalController::class, 'destroy'])
+        ->middleware('role:administracion|directora')
+        ->name('comunales.destroy');
 
     // Consulta y descarga — todo el equipo directivo
     Route::middleware('role:administracion|directora|secretaria|utp|convivencia')->group(function () {
@@ -126,4 +146,25 @@ Route::middleware('auth')->prefix('reuniones-comunales')->group(function () {
         Route::get('{reunion}', [ReunionComunalController::class, 'show'])->name('comunales.show');
         Route::get('{reunion}/download', [ReunionComunalController::class, 'download'])->name('comunales.download');
     });
+});
+
+// Búsqueda global documental (HU-07) — sesión autenticada; los resultados se
+// limitan a los módulos que el usuario puede leer (nunca revela reservados)
+Route::middleware('auth')
+    ->get('buscador', [BuscadorController::class, 'index'])
+    ->name('buscador.index');
+
+// Bitácora de auditoría y papelera (HU-08) — administración, Dirección e Inspectoría
+Route::middleware(['auth', 'role:administracion|directora|inspectoria'])->group(function () {
+    Route::get('auditoria', [AuditoriaController::class, 'index'])->name('auditoria.index');
+    Route::get('papelera', [PapeleraController::class, 'index'])->name('papelera.index');
+
+    $modulos = implode('|', array_keys(DocumentosPermitidos::MODULOS));
+
+    Route::post('papelera/{modulo}/restaurar/{id}', [PapeleraController::class, 'restaurar'])
+        ->where('modulo', $modulos)
+        ->name('papelera.restaurar');
+    Route::delete('papelera/{modulo}/{id}', [PapeleraController::class, 'destroy'])
+        ->where('modulo', $modulos)
+        ->name('papelera.destroy');
 });

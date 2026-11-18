@@ -1,0 +1,72 @@
+SGD-Chorombo - QA Fase 4 (HU-07, HU-08) - ejecución 1
+Inicio UTC (primera corrida): 2026-11-18T18:47Z
+Fin UTC (corrida final de verificación): 2026-11-18T19:25Z
+Rama: main
+Commit (previo al cambio): 44e5977
+Prueba nueva: tests/Feature/Fase4QaTest.php (11 casos, 128 aserciones)
+
+===== CONFIGURACIÓN TEMPORAL SIN SECRETOS =====
+Archivo temporal: phpunit.fase4.tmp.xml
+Única diferencia respecto de phpunit.xml: DB_HOST=127.0.0.1 -> DB_HOST=mysql
+Entorno: Docker (Laravel Sail) — PHP 8.5 + MySQL 8.4 (contenedores sgd-chorombo-laravel.test-1 / sgd-chorombo-mysql-1)
+Base de pruebas: testing (mismos parámetros que phpunit.xml; RefreshDatabase ejecuta create_auditorias_table y add_deleted_at_to_documentos_tables)
+Comando: docker compose exec -T laravel.test vendor/bin/phpunit -c phpunit.fase4.tmp.xml [ruta]
+Formato: php vendor/bin/pint --dirty --format agent -> "passed" (sin cambios pendientes)
+
+===== CASOS EJECUTADOS (Fase4QaTest) =====
+1. test_buscador_combina_texto_rango_fecha_tipo_y_emisor
+2. test_buscador_no_revela_reservados_ni_modulos_restringidos
+3. test_buscador_filtra_por_estado
+4. test_buscador_respeta_visibilidad_fila_a_fila_de_permisos
+5. test_eliminacion_restringida_en_todos_los_modulos
+6. test_papelera_recupera_documento_con_su_archivo
+7. test_papelera_respeta_la_lectura_de_cada_modulo
+8. test_eliminacion_definitiva_borra_archivo_y_registra_bitacora
+9. test_bitacora_registra_carga_edicion_descarga_eliminacion_y_restauracion
+10. test_bitacora_filtra_por_lectura_de_modulos
+11. test_folio_no_se_reutiliza_con_documentos_en_papelera
+
+===== AJUSTES DE CONTRATO EN PRUEBAS PREVIAS (resolución HU-08) =====
+- Fase2QaTest::test_secretaria_can_delete_own_memo -> test_secretaria_cannot_delete_own_memo
+  (el autor ya no elimina su memo: 403 y registro intacto).
+- Fase3QaTest::test_solo_roles_emitentes_pueden_gestionar_citaciones:
+  Secretaría y Convivencia reciben 403 al eliminar citaciones; Administración
+  elimina -> assertSoftDeleted.
+- MemoActionButtonsTest: 2 casos renombrados; el autor ve "Editar" pero no "Eliminar".
+
+===== HALLAZGOS CORREGIDOS DURANTE LA EJECUCIÓN =====
+1. AuditoriaController: clave 'modulo' ausente cuando no venía en la query
+   (validate() solo devuelve claves presentes) -> null-coalescing.
+2. PermisoAdministrativo sin scopeSearch: el buscador global devolvía 500 al
+   consultar el módulo de permisos con texto (añadido scopeSearch por motivo
+   y nombre del funcionario).
+3. CompromisoReunion entraba como modelo del buscador (registro hijo sin
+   scopes) -> DocumentosPermitidos::documentosLegiblesPara() excluye hijos.
+4. Aserciones propias corregidas: el texto de la consulta se refleja en la
+   caja de búsqueda (value="..."); se afirma sobre el contenido de la fila
+   (apoderado, motivo completo).
+
+===== SALIDA Fase4QaTest =====
+PHPUnit 12.5.40 by Sebastian Bergman and contributors.
+
+Runtime: PHP 8.5
+
+...........                                                       11 / 11 (100%)
+
+Time: 00:15.279, Memory: 62.50 MB
+
+OK (11 tests, 128 assertions)
+
+===== SALIDA SUITE COMPLETA (100 tests) =====
+Configuration: /var/www/html/phpunit.fase4.tmp.xml
+
+...............................................................   63 / 100 ( 63%)
+.............................................                   100 / 100 (100%)
+
+Time: 00:46.799, Memory: 68.10 MB
+
+OK (100 tests, 560 assertions)
+
+===== VERIFICACIÓN POST-PINT =====
+php vendor/bin/pint --dirty --format agent -> passed
+Re-corrida de Fase4QaTest: OK (11 tests, 128 assertions)

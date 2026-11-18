@@ -119,11 +119,22 @@ class Fase3QaTest extends TestCase
             'motivo' => 'pedagogico',
         ];
         $this->actingAs($this->utp)->post(route('citaciones.store'), $payload)->assertForbidden();
-        $this->actingAs($this->admin)
+
+        // HU-08: la eliminación no corresponde a los emisores (Secretaría,
+        // Convivencia) sino a Dirección y Administración.
+        $this->actingAs($this->secretaria)
             ->delete(route('citaciones.destroy', $citacion))
             ->assertForbidden();
-
+        $this->actingAs($this->convivencia)
+            ->delete(route('citaciones.destroy', $citacion))
+            ->assertForbidden();
         $this->assertDatabaseHas('citaciones', ['id' => $citacion->id]);
+
+        $this->actingAs($this->admin)
+            ->delete(route('citaciones.destroy', $citacion))
+            ->assertRedirect(route('citaciones.index'));
+
+        $this->assertSoftDeleted('citaciones', ['id' => $citacion->id]);
     }
 
     public function test_seguimiento_de_estado_de_citacion(): void

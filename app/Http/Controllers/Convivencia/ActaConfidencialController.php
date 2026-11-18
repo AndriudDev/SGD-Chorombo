@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Convivencia\StoreActaConfidencialRequest;
 use App\Http\Requests\Convivencia\UpdateActaConfidencialRequest;
 use App\Models\ActaConfidencial;
+use App\Models\Auditoria;
 use App\Services\ArchivoService;
+use App\Services\AuditoriaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -16,7 +18,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ActaConfidencialController extends Controller
 {
     public function __construct(
-        private ArchivoService $archivoService
+        private ArchivoService $archivoService,
+        private AuditoriaService $auditoria
     ) {}
 
     /**
@@ -128,11 +131,11 @@ class ActaConfidencialController extends Controller
      */
     public function destroy(ActaConfidencial $acta): RedirectResponse
     {
-        $this->archivoService->eliminar($acta->archivo, 'local');
+        // HU-08: eliminación lógica (papelera); el archivo privado se conserva hasta la purga definitiva.
         $acta->delete();
 
         return redirect()->route('actas.index')
-            ->with('success', 'Acta confidencial eliminada correctamente.');
+            ->with('success', 'Acta confidencial enviada a la papelera. Puede recuperarse desde allí.');
     }
 
     /**
@@ -152,6 +155,8 @@ class ActaConfidencialController extends Controller
         if (! $acta->archivo || ! Storage::disk('local')->exists($acta->archivo)) {
             abort(404, 'El archivo del acta no está disponible.');
         }
+
+        $this->auditoria->registrar(Auditoria::ACCION_DESCARGAR, $acta);
 
         return Storage::disk('local')->download($acta->archivo);
     }

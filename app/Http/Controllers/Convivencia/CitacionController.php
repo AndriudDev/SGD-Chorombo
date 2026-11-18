@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Convivencia\StoreCitacionRequest;
 use App\Http\Requests\Convivencia\UpdateCitacionRequest;
 use App\Http\Requests\Convivencia\UpdateEstadoCitacionRequest;
+use App\Models\Auditoria;
 use App\Models\Citacion;
 use App\Services\ArchivoService;
+use App\Services\AuditoriaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -17,7 +19,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class CitacionController extends Controller
 {
     public function __construct(
-        private ArchivoService $archivoService
+        private ArchivoService $archivoService,
+        private AuditoriaService $auditoria
     ) {}
 
     /**
@@ -138,11 +141,11 @@ class CitacionController extends Controller
      */
     public function destroy(Citacion $citacion): RedirectResponse
     {
-        $this->archivoService->eliminar($citacion->archivo);
+        // HU-08: eliminación lógica (papelera); el adjunto se conserva hasta la purga definitiva.
         $citacion->delete();
 
         return redirect()->route('citaciones.index')
-            ->with('success', 'Citación eliminada correctamente.');
+            ->with('success', 'Citación enviada a la papelera. Puede recuperarse desde allí.');
     }
 
     /**
@@ -164,6 +167,8 @@ class CitacionController extends Controller
         if (! $citacion->archivo || ! Storage::disk('public')->exists($citacion->archivo)) {
             abort(404, 'El respaldo de la citación no está disponible.');
         }
+
+        $this->auditoria->registrar(Auditoria::ACCION_DESCARGAR, $citacion);
 
         return Storage::disk('public')->download($citacion->archivo);
     }

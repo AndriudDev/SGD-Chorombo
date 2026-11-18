@@ -86,6 +86,33 @@
                         </a>
                     </li>
                 @endif
+
+                {{-- Búsqueda global (HU-07) — toda sesión autenticada --}}
+                <li class="nav-item">
+                    <a href="{{ route('buscador.index') }}"
+                       class="nav-link {{ request()->routeIs('buscador.index') ? 'active' : '' }}">
+                        <i class="bi bi-search"></i>
+                        <span class="sidebar-label">Búsqueda</span>
+                    </a>
+                </li>
+
+                {{-- Auditoría y papelera (HU-08) — administración, Dirección e Inspectoría --}}
+                @if (auth()->user()->hasAnyRole(['administracion', 'directora', 'inspectoria']))
+                    <li class="nav-item">
+                        <a href="{{ route('auditoria.index') }}"
+                           class="nav-link {{ request()->routeIs('auditoria.index') ? 'active' : '' }}">
+                            <i class="bi bi-clock-history"></i>
+                            <span class="sidebar-label">Auditoría</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('papelera.index') }}"
+                           class="nav-link {{ request()->routeIs('papelera.*') ? 'active' : '' }}">
+                            <i class="bi bi-trash"></i>
+                            <span class="sidebar-label">Papelera</span>
+                        </a>
+                    </li>
+                @endif
             </ul>
             <hr>
             <div class="dropdown">
@@ -115,6 +142,22 @@
                         {{ auth()->user()->roles->first()?->display_name ?? 'Panel' }}
                     </span>
                     <ul class="navbar-nav ms-auto">
+                        <li class="nav-item me-2">
+                            {{-- Búsqueda rápida global (HU-07) --}}
+                            <form method="GET" action="{{ route('buscador.index') }}" class="d-flex" role="search">
+                                <div class="input-group input-group-sm">
+                                    <input type="search"
+                                           class="form-control"
+                                           name="q"
+                                           placeholder="Buscar documento..."
+                                           aria-label="Buscar documento"
+                                           value="{{ request()->routeIs('buscador.index') ? request('q') : '' }}">
+                                    <button class="btn btn-outline-secondary" type="submit" title="Buscar">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        </li>
                         <li class="nav-item">
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf

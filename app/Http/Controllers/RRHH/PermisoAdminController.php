@@ -5,8 +5,10 @@ namespace App\Http\Controllers\RRHH;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RRHH\StorePermisoAdminRequest;
 use App\Http\Requests\RRHH\UpdatePermisoAdminRequest;
+use App\Models\Auditoria;
 use App\Models\PermisoAdministrativo;
 use App\Models\User;
+use App\Services\AuditoriaService;
 use App\Services\CorrespondenciaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +20,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class PermisoAdminController extends Controller
 {
     public function __construct(
-        private CorrespondenciaService $correspondenciaService
+        private CorrespondenciaService $correspondenciaService,
+        private AuditoriaService $auditoria
     ) {}
 
     /**
@@ -179,11 +182,11 @@ class PermisoAdminController extends Controller
             return back()->with('error', 'No se puede eliminar un permiso ya procesado.');
         }
 
-        $this->correspondenciaService->eliminarRespaldoPermiso($permiso);
+        // HU-08: eliminación lógica (papelera); el respaldo se conserva hasta la purga definitiva.
         $permiso->delete();
 
         return redirect()->route('permisos.index')
-            ->with('success', 'Solicitud de permiso eliminada correctamente.');
+            ->with('success', 'Solicitud de permiso enviada a la papelera. Puede recuperarse desde allí.');
     }
 
     /**
@@ -200,6 +203,8 @@ class PermisoAdminController extends Controller
         if (! $permiso->archivo || ! Storage::disk('public')->exists($permiso->archivo)) {
             abort(404, 'El respaldo adjunto no está disponible.');
         }
+
+        $this->auditoria->registrar(Auditoria::ACCION_DESCARGAR, $permiso);
 
         return Storage::disk('public')->download($permiso->archivo);
     }

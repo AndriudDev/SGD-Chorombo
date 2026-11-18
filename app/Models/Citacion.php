@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['estudiante_nombre', 'estudiante_run', 'apoderado_nombre', 'funcionario_cita', 'fecha', 'hora', 'motivo', 'estado', 'archivo', 'user_id'])]
 class Citacion extends Model
 {
+    use SoftDeletes;
     /** Motivos de citación (HU-04). */
     public const MOTIVOS = [
         'conductual' => 'Conductual',
@@ -65,5 +67,52 @@ class Citacion extends Model
                 ->orWhere('estudiante_run', 'LIKE', "%{$search}%")
                 ->orWhere('apoderado_nombre', 'LIKE', "%{$search}%");
         });
+    }
+
+    /**
+     * Scope: filter by the user who registered the citación (HU-07 emisor).
+     */
+    public function scopeByEmisor(Builder $query, int $userId): Builder
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    /**
+     * Scope: fecha within an inclusive range (HU-07 rango de fechas).
+     */
+    public function scopeEntreFechas(Builder $query, ?string $desde, ?string $hasta): Builder
+    {
+        if ($desde) {
+            $query->whereDate('fecha', '>=', $desde);
+        }
+        if ($hasta) {
+            $query->whereDate('fecha', '<=', $hasta);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Human-readable identifier for the audit trail (HU-08).
+     */
+    public function etiquetaAuditoria(): string
+    {
+        return "Citación: {$this->estudiante_nombre} ({$this->estudiante_run})";
+    }
+
+    /**
+     * Reference that identifies the file in search results (HU-07).
+     */
+    public function referencia(): string
+    {
+        return "#{$this->id}";
+    }
+
+    /**
+     * Storage disk holding the attachment.
+     */
+    public function discoArchivo(): string
+    {
+        return 'public';
     }
 }

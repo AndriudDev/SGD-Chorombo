@@ -3,6 +3,7 @@
 @section('content')
     @php
         $puedeEmitir = auth()->user()->hasAnyRole(['convivencia', 'secretaria', 'directora']);
+        $puedeEliminar = auth()->user()->hasAnyRole(['administracion', 'directora']);
         $coloresMotivo = ['conductual' => 'bg-danger', 'pedagogico' => 'bg-primary', 'administrativo' => 'bg-secondary'];
         $coloresEstado = ['programada' => 'bg-warning text-dark', 'asistio' => 'bg-success', 'no_asistio' => 'bg-danger', 'reprogramada' => 'bg-info text-dark'];
     @endphp
@@ -97,13 +98,19 @@
                     <a href="{{ route('citaciones.edit', $citacion->id) }}" class="btn btn-outline-secondary">
                         <i class="bi bi-pencil me-1"></i> Editar citación
                     </a>
+                </div>
+            @endif
+
+            {{-- Eliminar (papelera HU-08) — Dirección y Administración --}}
+            @if ($puedeEliminar)
+                <div class="d-grid gap-2">
                     <form action="{{ route('citaciones.destroy', $citacion->id) }}" method="POST">
                         @csrf
                         @method('DELETE')
                         <button type="button"
                                 class="btn btn-outline-danger w-100"
                                 data-confirm-modal
-                                data-confirm-message="¿Está seguro de eliminar la citación a {{ $citacion->apoderado_nombre }}? Esta acción no se puede deshacer."
+                                data-confirm-message="¿Está seguro de eliminar la citación a {{ $citacion->apoderado_nombre }}? Se enviará a la papelera y podrá recuperarse."
                                 data-confirm-btn="Eliminar"
                                 data-confirm-icon="bi-trash"
                                 data-confirm-btn-class="btn-danger">

@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Correspondencia;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Correspondencia\StoreMemoRequest;
 use App\Http\Requests\Correspondencia\UpdateMemoRequest;
+use App\Models\Auditoria;
 use App\Models\Memo;
+use App\Services\AuditoriaService;
 use App\Services\CorrespondenciaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +18,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class MemoController extends Controller
 {
     public function __construct(
-        private CorrespondenciaService $correspondenciaService
+        private CorrespondenciaService $correspondenciaService,
+        private AuditoriaService $auditoria
     ) {}
 
     /**
@@ -158,16 +161,16 @@ class MemoController extends Controller
      */
     public function destroy(Memo $memo): RedirectResponse
     {
-        $user = Auth::user();
-        if (! $user->hasAnyRole(['administracion']) && $memo->user_id !== $user->id) {
+        // HU-08: la eliminación es papelera recuperable y queda restringida a
+        // Dirección, Inspectoría General y Administración (también vía middleware de ruta).
+        if (! Auth::user()->hasAnyRole(['administracion', 'directora', 'inspectoria'])) {
             abort(403, 'No tienes permiso para eliminar este memo.');
         }
 
-        $this->correspondenciaService->eliminarArchivo($memo);
         $memo->delete();
 
         return redirect()->route('memos.index')
-            ->with('success', 'Memo/Oficio eliminado correctamente.');
+            ->with('success', 'Memo/Oficio enviado a la papelera. Puede recuperarse desde allí.');
     }
 
     /**
@@ -175,6 +178,8 @@ class MemoController extends Controller
      */
     public function download(Memo $memo): StreamedResponse
     {
+        $this->auditoria->registrar(Auditoria::ACCION_DESCARGAR, $memo);
+
         return Storage::disk('public')->download($memo->archivo);
     }
 }

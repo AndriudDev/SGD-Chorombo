@@ -239,11 +239,15 @@ class Fase2QaTest extends TestCase
             ->assertRedirect(route('memos.index'));
     }
 
-    public function test_secretaria_can_delete_own_memo(): void
+    public function test_secretaria_cannot_delete_own_memo(): void
     {
+        // HU-08: la eliminación de documentos queda restringida a Dirección,
+        // Inspectoría General y Administración, incluso del memo propio.
         $this->actingAs($this->secretariaA)
             ->delete(route('memos.destroy', $this->memoDeA->id))
-            ->assertRedirect(route('memos.index'));
+            ->assertForbidden();
+
+        $this->assertNotNull(Memo::find($this->memoDeA->id), 'El memo propio no debe eliminarse tras un 403.');
     }
 
     public function test_secretaria_can_edit_own_memo(): void

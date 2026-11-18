@@ -5,8 +5,10 @@ namespace App\Http\Controllers\UTP;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UTP\StoreReunionComunalRequest;
 use App\Http\Requests\UTP\UpdateReunionComunalRequest;
+use App\Models\Auditoria;
 use App\Models\ReunionComunal;
 use App\Services\ArchivoService;
+use App\Services\AuditoriaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -15,7 +17,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ReunionComunalController extends Controller
 {
     public function __construct(
-        private ArchivoService $archivoService
+        private ArchivoService $archivoService,
+        private AuditoriaService $auditoria
     ) {}
 
     /**
@@ -123,11 +126,11 @@ class ReunionComunalController extends Controller
      */
     public function destroy(ReunionComunal $reunion): RedirectResponse
     {
-        $this->archivoService->eliminar($reunion->archivo);
+        // HU-08: eliminación lógica (papelera); el adjunto se conserva hasta la purga definitiva.
         $reunion->delete();
 
         return redirect()->route('comunales.index')
-            ->with('success', 'Reunión comunal eliminada correctamente.');
+            ->with('success', 'Reunión comunal enviada a la papelera. Puede recuperarse desde allí.');
     }
 
     /**
@@ -138,6 +141,8 @@ class ReunionComunalController extends Controller
         if (! $reunion->archivo || ! Storage::disk('public')->exists($reunion->archivo)) {
             abort(404, 'El documento de la reunión no está disponible.');
         }
+
+        $this->auditoria->registrar(Auditoria::ACCION_DESCARGAR, $reunion);
 
         return Storage::disk('public')->download($reunion->archivo);
     }
