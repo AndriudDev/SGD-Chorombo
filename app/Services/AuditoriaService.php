@@ -16,6 +16,7 @@ class AuditoriaService
     {
         Auditoria::create([
             'user_id' => auth()->id(),
+            'user_nombre' => auth()->user()?->name,
             'accion' => $accion,
             'modelo_type' => $modelo->getMorphClass(),
             'modelo_id' => $modelo->getKey(),

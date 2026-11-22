@@ -108,22 +108,29 @@ class PermisoAdminController extends Controller
             ? $request->user_id
             : $user->id;
 
-        $permiso = PermisoAdministrativo::create([
-            'user_id' => $userId,
-            'fecha_inicio' => $request->fecha_inicio,
-            'fecha_fin' => $request->fecha_fin,
-            'tipo_jornada' => $request->tipo_jornada,
-            'motivo' => $request->motivo,
-            'estado' => 'pendiente',
-            'created_by' => $user->id,
-        ]);
+        // QA-F4-005: la traza de auditoría (observer created) y la transición
+        // inicial forman parte de la misma transacción; si no puede registrarse,
+        // la solicitud no se crea. El archivo se sube después, sin traza propia.
+        $permiso = DB::transaction(function () use ($userId, $user, $request): PermisoAdministrativo {
+            $permiso = PermisoAdministrativo::create([
+                'user_id' => $userId,
+                'fecha_inicio' => $request->fecha_inicio,
+                'fecha_fin' => $request->fecha_fin,
+                'tipo_jornada' => $request->tipo_jornada,
+                'motivo' => $request->motivo,
+                'estado' => 'pendiente',
+                'created_by' => $user->id,
+            ]);
+
+            $this->registrarTransicion($permiso, null);
+
+            return $permiso;
+        });
 
         if ($request->hasFile('archivo')) {
             $permiso->archivo = $this->correspondenciaService->subirRespaldoPermiso($request->file('archivo'), $permiso);
             $permiso->save();
         }
-
-        $this->registrarTransicion($permiso, null);
 
         return redirect()->route('permisos.index')
             ->with('success', 'Solicitud de permiso creada correctamente.');
@@ -151,17 +158,21 @@ class PermisoAdminController extends Controller
             return back()->with('error', 'No se puede modificar un permiso ya procesado.');
         }
 
-        $permiso->update([
-            'fecha_inicio' => $request->fecha_inicio,
-            'fecha_fin' => $request->fecha_fin,
-            'tipo_jornada' => $request->tipo_jornada,
-            'motivo' => $request->motivo,
-        ]);
+        // QA-F4-005: la traza de auditoría (observer updated) forma parte de la
+        // misma transacción; si no puede registrarse, la edición no se aplica.
+        DB::transaction(function () use ($permiso, $request): void {
+            $permiso->update([
+                'fecha_inicio' => $request->fecha_inicio,
+                'fecha_fin' => $request->fecha_fin,
+                'tipo_jornada' => $request->tipo_jornada,
+                'motivo' => $request->motivo,
+            ]);
 
-        // Admin/Directora/Inspectoría pueden cambiar el funcionario al editar
-        if (Auth::user()->hasAnyRole(['directora', 'administracion', 'inspectoria']) && $request->filled('user_id')) {
-            $permiso->update(['user_id' => $request->user_id]);
-        }
+            // Admin/Directora/Inspectoría pueden cambiar el funcionario al editar
+            if (Auth::user()->hasAnyRole(['directora', 'administracion', 'inspectoria']) && $request->filled('user_id')) {
+                $permiso->update(['user_id' => $request->user_id]);
+            }
+        });
 
         if ($request->hasFile('archivo')) {
             $this->correspondenciaService->eliminarRespaldoPermiso($permiso);
@@ -183,7 +194,8 @@ class PermisoAdminController extends Controller
         }
 
         // HU-08: eliminación lógica (papelera); el respaldo se conserva hasta la purga definitiva.
-        $permiso->delete();
+        // QA-F4-005: la eliminación exige su traza en la misma transacción.
+        DB::transaction(fn () => $permiso->delete());
 
         return redirect()->route('permisos.index')
             ->with('success', 'Solicitud de permiso enviada a la papelera. Puede recuperarse desde allí.');

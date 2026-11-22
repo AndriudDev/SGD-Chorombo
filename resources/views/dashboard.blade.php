@@ -13,7 +13,10 @@
                 <h1 class="display-6 fw-semibold text-primary">
                     Bienvenido, <span class="text-break-word d-inline-block">{{ auth()->user()->name }}</span>
                 </h1>
-                <p class="lead text-muted fs-6 mb-0">Panel de administración — SGD-Chorombo</p>
+                {{-- UX-F4-17: encabezado personalizado por perfil --}}
+                <p class="lead text-muted fs-6 mb-0">
+                    {{ auth()->user()->hasRole('directora') ? 'Panel de Dirección Escolar' : 'Panel de administración' }} — SGD-Chorombo
+                </p>
             </div>
 
             {{-- Tarjetas de módulos --}}

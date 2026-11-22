@@ -47,6 +47,12 @@ class BuscadorController extends Controller
     /** Módulos con columna de estado; los demás se excluyen al filtrar por estado. */
     private const MODELOS_CON_ESTADO = [Citacion::class, PermisoAdministrativo::class];
 
+    /** Estados del filtro aplicables solo a permisos administrativos (UX-F4-02). */
+    private const ESTADOS_PERMISO = ['pendiente', 'aprobado', 'rechazado', 'revocada'];
+
+    /** Estados del filtro aplicables solo a citaciones (UX-F4-02). */
+    private const ESTADOS_CITACION = ['programada', 'asistio', 'no_asistio', 'reprogramada'];
+
     /**
      * Global search with combinable filters (HU-07).
      *
@@ -113,8 +119,19 @@ class BuscadorController extends Controller
             $modelos = array_values(array_intersect($modelos, [$claseDeTipo]));
         }
 
-        if ($datos['estado'] ?? null) {
-            $modelos = array_values(array_intersect($modelos, self::MODELOS_CON_ESTADO));
+        if ($estado = $datos['estado'] ?? null) {
+            // UX-F4-02: cada estado pertenece a un módulo; solo se consulta ese
+            // módulo para no devolver vacíos artificiales desde los demás.
+            $claseDeEstado = match (true) {
+                in_array($estado, self::ESTADOS_PERMISO, true) => PermisoAdministrativo::class,
+                in_array($estado, self::ESTADOS_CITACION, true) => Citacion::class,
+                default => null,
+            };
+
+            $modelos = array_values(array_intersect(
+                $modelos,
+                $claseDeEstado ? [$claseDeEstado] : self::MODELOS_CON_ESTADO
+            ));
         }
 
         return $modelos;
@@ -133,7 +150,10 @@ class BuscadorController extends Controller
             ->with($clase === PermisoAdministrativo::class ? 'creador' : 'user')
             ->entreFechas($datos['fecha_desde'] ?? null, $datos['fecha_hasta'] ?? null);
 
-        if ($texto = trim((string) ($datos['q'] ?? ''))) {
+        // Comparación estricta: «0» es una cadena de búsqueda válida y no
+        // debe omitir el filtro por ser falsy (QA-F4-004).
+        $texto = trim((string) ($datos['q'] ?? ''));
+        if ($texto !== '') {
             $query->search($texto);
         }
 
@@ -193,12 +213,13 @@ class BuscadorController extends Controller
      */
     private function etiquetaTipo(Model $modelo, string $clase): string
     {
+        // UX-F4-08: mismas denominaciones que el filtro de tipo (singular).
         return match ($clase) {
             Memo::class => $modelo->tipo === 'oficio' ? 'Oficio' : 'Memo',
-            PermisoAdministrativo::class => 'Permiso',
-            Citacion::class => 'Citación',
-            ActaConfidencial::class => 'Acta',
-            ReunionComunal::class => 'Reunión',
+            PermisoAdministrativo::class => 'Permiso administrativo',
+            Citacion::class => 'Citación a apoderado',
+            ActaConfidencial::class => 'Acta confidencial',
+            ReunionComunal::class => 'Reunión comunal',
         };
     }
 
@@ -225,7 +246,7 @@ class BuscadorController extends Controller
      */
     private function rutaDetalle(Model $modelo, string $clase): ?string
     {
-        return match ($clase) {
+        $ruta = match ($clase) {
             Memo::class => route('memos.show', $modelo->getKey()),
             Citacion::class => route('citaciones.show', $modelo->getKey()),
             ReunionComunal::class => route('comunales.show', $modelo->getKey()),
@@ -234,6 +255,17 @@ class BuscadorController extends Controller
                 : null,
             default => null,
         };
+
+        if ($ruta === null) {
+            return null;
+        }
+
+        // UX-F4-16: «Volver» desde el detalle regresa al buscador con los
+        // filtros y la página previos; la vista valida que apunte al buscador.
+        $filtros = http_build_query(request()->query());
+        $origen = route('buscador.index').($filtros === '' ? '' : '?'.$filtros);
+
+        return $ruta.(str_contains($ruta, '?') ? '&' : '?').'volver='.urlencode($origen);
     }
 
     /**

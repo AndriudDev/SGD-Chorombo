@@ -121,8 +121,8 @@
                                                     class="btn btn-sm btn-outline-danger me-1"
                                                     title="Eliminar"
                                                     data-confirm-modal
-                                                    data-confirm-message="¿Está seguro de eliminar el memo/oficio «{{ $memo->folio }}»? Se enviará a la papelera y podrá recuperarse."
-                                                    data-confirm-btn="Eliminar"
+                                                    data-confirm-message="¿Enviar a papelera el memo/oficio «{{ $memo->folio }}»? Podrás restaurarlo desde la papelera."
+                                                    data-confirm-btn="Enviar a papelera"
                                                     data-confirm-icon="bi-trash"
                                                     data-confirm-btn-class="btn-danger">
                                                 <i class="bi bi-trash"></i>

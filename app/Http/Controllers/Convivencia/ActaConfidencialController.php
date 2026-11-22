@@ -11,6 +11,7 @@ use App\Services\ArchivoService;
 use App\Services\AuditoriaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -57,7 +58,9 @@ class ActaConfidencialController extends Controller
      */
     public function store(StoreActaConfidencialRequest $request): RedirectResponse
     {
-        $acta = ActaConfidencial::create([
+        // QA-F4-005: la traza de auditoría (observer created) forma parte de la
+        // misma transacción; si no puede registrarse, el acta no se crea.
+        $acta = DB::transaction(fn (): ActaConfidencial => ActaConfidencial::create([
             'titulo' => $request->titulo,
             'categoria' => $request->categoria,
             'ambito' => $request->ambito,
@@ -67,7 +70,7 @@ class ActaConfidencialController extends Controller
             'fecha' => $request->fecha,
             'numero_reserva' => Auth::user()->hasRole('directora') ? ($request->input('numero_reserva') ?: null) : null,
             'user_id' => auth()->id(),
-        ]);
+        ]));
 
         $acta->archivo = $this->archivoService->subir(
             $request->file('archivo'),
@@ -109,7 +112,9 @@ class ActaConfidencialController extends Controller
             $datos['numero_reserva'] = $request->input('numero_reserva') ?: null;
         }
 
-        $acta->update($datos);
+        // QA-F4-005: la traza de auditoría (observer updated) forma parte de la
+        // misma transacción; si no puede registrarse, la edición no se aplica.
+        DB::transaction(fn () => $acta->update($datos));
 
         if ($request->hasFile('archivo')) {
             $this->archivoService->eliminar($acta->archivo, 'local');
@@ -132,7 +137,8 @@ class ActaConfidencialController extends Controller
     public function destroy(ActaConfidencial $acta): RedirectResponse
     {
         // HU-08: eliminación lógica (papelera); el archivo privado se conserva hasta la purga definitiva.
-        $acta->delete();
+        // QA-F4-005: la eliminación exige su traza en la misma transacción.
+        DB::transaction(fn () => $acta->delete());
 
         return redirect()->route('actas.index')
             ->with('success', 'Acta confidencial enviada a la papelera. Puede recuperarse desde allí.');

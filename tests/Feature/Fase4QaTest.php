@@ -152,7 +152,7 @@ class Fase4QaTest extends TestCase
         $this->actingAs($this->utp)
             ->get(route('buscador.index', ['q' => 'computadores', 'fecha_desde' => '2026-11-20']))
             ->assertOk()
-            ->assertSee('No hay coincidencias')
+            ->assertSee('Sin coincidencias')
             ->assertDontSee('MEMO-2026-0001');
     }
 

@@ -10,6 +10,23 @@
             'restaurar' => 'bg-secondary',
             'eliminar_definitivo' => 'bg-danger',
         ];
+
+        // UX-F4-06: distinguir «bitácora vacía» de «sin coincidencias por filtros».
+        $hayFiltros = collect(request()->query())->except(['page'])->isNotEmpty();
+
+        // UX-F4-13: claves técnicas y fechas ISO nunca se muestran en crudo.
+        $clavesTecnicas = ['deleted_at', 'created_at', 'updated_at'];
+
+        $valorLegible = function ($valor) {
+            if ($valor === null || $valor === '') {
+                return '—';
+            }
+            if (is_string($valor) && preg_match('/^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}(:\d{2})?)?$/', $valor)) {
+                return \Illuminate\Support\Carbon::parse($valor)->format('d/m/Y H:i');
+            }
+
+            return $valor;
+        };
     @endphp
 
     <div class="d-flex justify-content-between align-items-center sgd-page-header">
@@ -26,7 +43,7 @@
     <div class="card filter-card mb-3">
         <div class="card-body">
             <form method="GET" action="{{ route('auditoria.index') }}" class="row g-3">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="usuario" class="form-label">Usuario</label>
                     <select name="usuario" id="usuario" class="form-select">
                         <option value="">Todos</option>
@@ -69,9 +86,9 @@
                     <input type="date" class="form-control" id="fecha_hasta" name="fecha_hasta"
                            value="{{ request('fecha_hasta') }}">
                 </div>
-                <div class="col-md-1 d-flex align-items-end">
+                <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-outline-secondary w-100">
-                        <i class="bi bi-filter"></i>
+                        <i class="bi bi-filter me-1"></i> Filtrar
                     </button>
                 </div>
             </form>
@@ -97,7 +114,7 @@
                         @forelse ($registros as $registro)
                             <tr>
                                 <td class="text-nowrap">{{ $registro->created_at->format('d/m/Y H:i:s') }}</td>
-                                <td>{{ $registro->user->name ?? 'Usuario eliminado' }}</td>
+                                <td>{{ $registro->user?->name ?? $registro->user_nombre ?? 'Usuario eliminado' }}</td>
                                 <td>
                                     <span class="badge {{ $coloresAccion[$registro->accion] ?? 'bg-secondary' }} rounded-pill">
                                         {{ $acciones[$registro->accion] ?? $registro->accion }}
@@ -115,18 +132,35 @@
                                     {{ $modulo ? ($modulos[$modulo] ?? $modulo) : '—' }}
                                 </td>
                                 <td>
-                                    @if ($registro->detalles)
+                                    @php
+                                        // UX-F4-13: sin claves técnicas (deleted_at…) ni fechas ISO en crudo.
+                                        $cambios = collect($registro->detalles ?? [])
+                                            ->except($clavesTecnicas);
+                                        $esEventoDeBorrado = in_array($registro->accion, ['eliminar', 'eliminar_definitivo', 'restaurar'], true);
+                                    @endphp
+                                    @if ($cambios->isNotEmpty())
                                         <div class="small text-muted">
-                                            @foreach (array_slice($registro->detalles, 0, 3, true) as $campo => [$anterior, $nuevo])
+                                            @foreach ($cambios->take(3) as $campo => [$anterior, $nuevo])
                                                 <div>
                                                     <strong>{{ $campo }}:</strong>
-                                                    {{ $anterior ?? '—' }} &rarr; {{ $nuevo ?? '—' }}
+                                                    {{ $valorLegible($anterior) }} &rarr; {{ $valorLegible($nuevo) }}
                                                 </div>
                                             @endforeach
-                                            @if (count($registro->detalles) > 3)
-                                                <div>+{{ count($registro->detalles) - 3 }} cambios más</div>
+                                            @if ($cambios->count() > 3)
+                                                <div>+{{ $cambios->count() - 3 }} cambios más</div>
                                             @endif
                                         </div>
+                                    @elseif ($esEventoDeBorrado)
+                                        {{-- UX-F4-15: presentación legible del evento --}}
+                                        <span class="small text-muted">
+                                            @if ($registro->accion === 'restaurar')
+                                                Restaurado el {{ $registro->created_at->format('d/m/Y H:i') }}
+                                            @elseif ($registro->accion === 'eliminar_definitivo')
+                                                Eliminado definitivamente el {{ $registro->created_at->format('d/m/Y H:i') }}
+                                            @else
+                                                Eliminado el {{ $registro->created_at->format('d/m/Y H:i') }}
+                                            @endif
+                                        </span>
                                     @else
                                         <span class="text-muted">&mdash;</span>
                                     @endif
@@ -135,7 +169,11 @@
                         @empty
                             <tr>
                                 <td colspan="6" class="text-center text-muted py-4">
-                                    No hay registros de auditoría para los filtros aplicados.
+                                    @if ($hayFiltros)
+                                        Sin coincidencias en la bitácora con los filtros aplicados.
+                                    @else
+                                        La bitácora aún no tiene registros.
+                                    @endif
                                 </td>
                             </tr>
                         @endforelse

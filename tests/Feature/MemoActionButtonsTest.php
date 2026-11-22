@@ -100,6 +100,6 @@ class MemoActionButtonsTest extends TestCase
 
     private function confirmacionDeEliminacion(): string
     {
-        return '¿Está seguro de eliminar el memo/oficio «'.$this->memoAjeno->folio.'»?';
+        return '¿Enviar a papelera el memo/oficio «'.$this->memoAjeno->folio.'»?';
     }
 }

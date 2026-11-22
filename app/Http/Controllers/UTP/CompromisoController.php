@@ -8,6 +8,7 @@ use App\Http\Requests\UTP\UpdateCompromisoRequest;
 use App\Models\CompromisoReunion;
 use App\Models\ReunionComunal;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class CompromisoController extends Controller
@@ -17,10 +18,12 @@ class CompromisoController extends Controller
      */
     public function store(StoreCompromisoRequest $request, ReunionComunal $reunion): RedirectResponse
     {
-        $reunion->compromisos()->create([
+        // QA-F4-005: la traza de auditoría (observer created) forma parte de la
+        // misma transacción; si no puede registrarse, el compromiso no se crea.
+        DB::transaction(fn () => $reunion->compromisos()->create([
             'descripcion' => $request->descripcion,
             'fecha_limite' => $request->fecha_limite,
-        ]);
+        ]));
 
         return redirect()->route('comunales.show', $reunion)
             ->with('success', 'Compromiso registrado correctamente.');
@@ -43,10 +46,12 @@ class CompromisoController extends Controller
     {
         $this->verificarPertenencia($reunion, $compromiso);
 
-        $compromiso->update([
+        // QA-F4-005: la traza de auditoría (observer updated) forma parte de la
+        // misma transacción; si no puede registrarse, la edición no se aplica.
+        DB::transaction(fn () => $compromiso->update([
             'descripcion' => $request->descripcion,
             'fecha_limite' => $request->fecha_limite,
-        ]);
+        ]));
 
         return redirect()->route('comunales.show', $reunion)
             ->with('success', 'Compromiso actualizado correctamente.');
@@ -59,7 +64,8 @@ class CompromisoController extends Controller
     {
         $this->verificarPertenencia($reunion, $compromiso);
 
-        $compromiso->delete();
+        // QA-F4-005: la eliminación exige su traza en la misma transacción.
+        DB::transaction(fn () => $compromiso->delete());
 
         return redirect()->route('comunales.show', $reunion)
             ->with('success', 'Compromiso eliminado correctamente.');

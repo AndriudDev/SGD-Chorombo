@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id', 'accion', 'modelo_type', 'modelo_id', 'modelo_nombre', 'detalles', 'created_at'])]
+#[Fillable(['user_id', 'user_nombre', 'accion', 'modelo_type', 'modelo_id', 'modelo_nombre', 'detalles', 'created_at'])]
 class Auditoria extends Model
 {
     /** Acciones registradas en la bitácora (HU-08). */
@@ -23,10 +23,10 @@ class Auditoria extends Model
 
     public const ACCION_ELIMINAR_DEFINITIVO = 'eliminar_definitivo';
 
-    /** @var array<string, string> etiquetas legibles de las acciones */
+    /** @var array<string, string> etiquetas legibles de las acciones (UX-F4-05/15) */
     public const ACCIONES = [
-        self::ACCION_CREAR => 'Carga',
-        self::ACCION_EDITAR => 'Edición',
+        self::ACCION_CREAR => 'Creación',
+        self::ACCION_EDITAR => 'Actualización de contenido',
         self::ACCION_DESCARGAR => 'Descarga',
         self::ACCION_ELIMINAR => 'Eliminación',
         self::ACCION_RESTAURAR => 'Restauración',

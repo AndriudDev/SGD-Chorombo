@@ -12,6 +12,7 @@ use App\Services\ArchivoService;
 use App\Services\AuditoriaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -61,7 +62,9 @@ class CitacionController extends Controller
      */
     public function store(StoreCitacionRequest $request): RedirectResponse
     {
-        $citacion = Citacion::create([
+        // QA-F4-005: la traza de auditoría (observer created) forma parte de la
+        // misma transacción; si no puede registrarse, la citación no se crea.
+        $citacion = DB::transaction(fn (): Citacion => Citacion::create([
             'estudiante_nombre' => $request->estudiante_nombre,
             'estudiante_run' => $request->estudiante_run,
             'apoderado_nombre' => $request->apoderado_nombre,
@@ -71,7 +74,7 @@ class CitacionController extends Controller
             'motivo' => $request->motivo,
             'estado' => 'programada',
             'user_id' => auth()->id(),
-        ]);
+        ]));
 
         if ($request->hasFile('archivo')) {
             $citacion->archivo = $this->archivoService->subir(
@@ -112,7 +115,9 @@ class CitacionController extends Controller
      */
     public function update(UpdateCitacionRequest $request, Citacion $citacion): RedirectResponse
     {
-        $citacion->update([
+        // QA-F4-005: la traza de auditoría (observer updated) forma parte de la
+        // misma transacción; si no puede registrarse, la edición no se aplica.
+        DB::transaction(fn () => $citacion->update([
             'estudiante_nombre' => $request->estudiante_nombre,
             'estudiante_run' => $request->estudiante_run,
             'apoderado_nombre' => $request->apoderado_nombre,
@@ -120,7 +125,7 @@ class CitacionController extends Controller
             'fecha' => $request->fecha,
             'hora' => $request->hora,
             'motivo' => $request->motivo,
-        ]);
+        ]));
 
         if ($request->hasFile('archivo')) {
             $this->archivoService->eliminar($citacion->archivo);
@@ -142,7 +147,8 @@ class CitacionController extends Controller
     public function destroy(Citacion $citacion): RedirectResponse
     {
         // HU-08: eliminación lógica (papelera); el adjunto se conserva hasta la purga definitiva.
-        $citacion->delete();
+        // QA-F4-005: la eliminación exige su traza en la misma transacción.
+        DB::transaction(fn () => $citacion->delete());
 
         return redirect()->route('citaciones.index')
             ->with('success', 'Citación enviada a la papelera. Puede recuperarse desde allí.');
@@ -153,7 +159,8 @@ class CitacionController extends Controller
      */
     public function actualizarEstado(UpdateEstadoCitacionRequest $request, Citacion $citacion): RedirectResponse
     {
-        $citacion->update(['estado' => $request->estado]);
+        // QA-F4-005: la actualización de estado exige su traza en la misma transacción.
+        DB::transaction(fn () => $citacion->update(['estado' => $request->estado]));
 
         return redirect()->route('citaciones.show', $citacion)
             ->with('success', 'Estado de la citación actualizado correctamente.');

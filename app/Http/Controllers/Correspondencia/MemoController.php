@@ -11,6 +11,7 @@ use App\Services\AuditoriaService;
 use App\Services\CorrespondenciaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -66,14 +67,16 @@ class MemoController extends Controller
             return back()->withErrors($errors);
         }
 
-        $memo = Memo::create([
+        // QA-F4-005: la traza de auditoría (observer created) forma parte de la
+        // misma transacción; si no puede registrarse, el memo no se crea.
+        $memo = DB::transaction(fn (): Memo => Memo::create([
             'folio' => $folio,
             'tipo' => $request->tipo,
             'fecha' => $request->fecha,
             'destinatario' => $request->destinatario,
             'asunto' => $request->asunto,
             'user_id' => auth()->id(),
-        ]);
+        ]));
 
         if ($request->hasFile('archivo')) {
             $memo->archivo = $this->correspondenciaService->subirArchivo($request->file('archivo'), $memo);
@@ -143,7 +146,9 @@ class MemoController extends Controller
             $datos['folio'] = $folio;
         }
 
-        $memo->update($datos);
+        // QA-F4-005: la traza de auditoría (observer updated) forma parte de la
+        // misma transacción; si no puede registrarse, la edición no se aplica.
+        DB::transaction(fn () => $memo->update($datos));
 
         if ($request->hasFile('archivo')) {
             // Delete old file if exists
@@ -167,7 +172,8 @@ class MemoController extends Controller
             abort(403, 'No tienes permiso para eliminar este memo.');
         }
 
-        $memo->delete();
+        // QA-F4-005: la eliminación exige su traza en la misma transacción.
+        DB::transaction(fn () => $memo->delete());
 
         return redirect()->route('memos.index')
             ->with('success', 'Memo/Oficio enviado a la papelera. Puede recuperarse desde allí.');

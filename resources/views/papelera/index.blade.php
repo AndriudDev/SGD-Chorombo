@@ -10,7 +10,7 @@
 
     <p class="text-muted">
         Los documentos eliminados permanecen aquí hasta que un perfil autorizado los restaure
-        o los elimine definitivamente (HU-08).
+        o los elimine definitivamente.
     </p>
 
     @if (empty($secciones))
@@ -22,7 +22,7 @@
             <div class="card shadow-sm mb-3">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <span><i class="bi bi-trash me-1"></i> {{ $etiquetas[$modulo] ?? $modulo }}</span>
-                    <span class="badge bg-secondary rounded-pill">{{ $documentos->count() }}</span>
+                    <span class="badge bg-secondary rounded-pill">{{ $documentos->total() }}</span>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -42,10 +42,19 @@
                                         $fecha = $documento instanceof \App\Models\PermisoAdministrativo
                                             ? $documento->fecha_inicio
                                             : $documento->fecha;
+
+                                        // UX-F4-11: la columna Documento muestra asunto/título,
+                                        // no la referencia (que ya tiene su propia columna).
+                                        $titulo = match (true) {
+                                            $documento instanceof \App\Models\Memo => $documento->asunto,
+                                            $documento instanceof \App\Models\PermisoAdministrativo => $documento->motivo,
+                                            $documento instanceof \App\Models\Citacion => "{$documento->estudiante_nombre} — {$documento->apoderado_nombre}",
+                                            default => $documento->titulo,
+                                        };
                                     @endphp
                                     <tr>
                                         <td>
-                                            {{ $documento->etiquetaAuditoria() }}
+                                            {{ $titulo ?: $documento->referencia() }}
                                             @if ($documento->archivo)
                                                 <i class="bi bi-paperclip ms-1 text-muted" title="Con archivo adjunto"></i>
                                             @endif
@@ -87,6 +96,11 @@
                         </table>
                     </div>
                 </div>
+                @if ($documentos->hasPages())
+                    <div class="card-footer">
+                        {{ $documentos->links() }}
+                    </div>
+                @endif
             </div>
         @endforeach
     @endif

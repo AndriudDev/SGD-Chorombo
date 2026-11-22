@@ -3,11 +3,17 @@
 @section('content')
     @php
         $isEdit = isset($permiso) && $permiso !== null;
+
+        // UX-F4-16: «Volver» regresa al buscador con los filtros previos si se llegó desde él.
+        $volverQuery = request('volver');
+        $rutaVolver = is_string($volverQuery) && str_starts_with($volverQuery, route('buscador.index'))
+            ? $volverQuery
+            : route('permisos.index');
     @endphp
 
     <div class="d-flex justify-content-between align-items-center sgd-page-header">
         <h1 class="h3">{{ $isEdit ? 'Editar Permiso' : 'Solicitar Permiso' }}</h1>
-        <a href="{{ route('permisos.index') }}" class="btn btn-outline-secondary">
+        <a href="{{ $rutaVolver }}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i> Volver
         </a>
     </div>

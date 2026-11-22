@@ -10,6 +10,7 @@ use App\Models\ReunionComunal;
 use App\Services\ArchivoService;
 use App\Services\AuditoriaService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -56,13 +57,15 @@ class ReunionComunalController extends Controller
      */
     public function store(StoreReunionComunalRequest $request): RedirectResponse
     {
-        $reunion = ReunionComunal::create([
+        // QA-F4-005: la traza de auditoría (observer created) forma parte de la
+        // misma transacción; si no puede registrarse, la reunión no se crea.
+        $reunion = DB::transaction(fn (): ReunionComunal => ReunionComunal::create([
             'titulo' => $request->titulo,
             'categoria' => $request->categoria,
             'fecha' => $request->fecha,
             'descripcion' => $request->descripcion,
             'user_id' => auth()->id(),
-        ]);
+        ]));
 
         if ($request->hasFile('archivo')) {
             $reunion->archivo = $this->archivoService->subir(
@@ -100,12 +103,14 @@ class ReunionComunalController extends Controller
      */
     public function update(UpdateReunionComunalRequest $request, ReunionComunal $reunion): RedirectResponse
     {
-        $reunion->update([
+        // QA-F4-005: la traza de auditoría (observer updated) forma parte de la
+        // misma transacción; si no puede registrarse, la edición no se aplica.
+        DB::transaction(fn () => $reunion->update([
             'titulo' => $request->titulo,
             'categoria' => $request->categoria,
             'fecha' => $request->fecha,
             'descripcion' => $request->descripcion,
-        ]);
+        ]));
 
         if ($request->hasFile('archivo')) {
             $this->archivoService->eliminar($reunion->archivo);
@@ -127,7 +132,8 @@ class ReunionComunalController extends Controller
     public function destroy(ReunionComunal $reunion): RedirectResponse
     {
         // HU-08: eliminación lógica (papelera); el adjunto se conserva hasta la purga definitiva.
-        $reunion->delete();
+        // QA-F4-005: la eliminación exige su traza en la misma transacción.
+        DB::transaction(fn () => $reunion->delete());
 
         return redirect()->route('comunales.index')
             ->with('success', 'Reunión comunal enviada a la papelera. Puede recuperarse desde allí.');

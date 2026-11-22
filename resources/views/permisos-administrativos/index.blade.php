@@ -137,8 +137,8 @@
                                                     class="btn btn-sm btn-outline-danger me-1"
                                                     title="Eliminar"
                                                     data-confirm-modal
-                                                    data-confirm-message="¿Está seguro de eliminar esta solicitud de permiso?"
-                                                    data-confirm-btn="Eliminar"
+                                                    data-confirm-message="¿Enviar a papelera esta solicitud de permiso? Podrás restaurarla desde la papelera."
+                                                    data-confirm-btn="Enviar a papelera"
                                                     data-confirm-icon="bi-trash"
                                                     data-confirm-btn-class="btn-danger">
                                                 <i class="bi bi-trash"></i>

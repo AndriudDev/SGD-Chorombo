@@ -5,11 +5,17 @@
         $puedeGestionar = auth()->user()->hasAnyRole(['utp', 'directora']);
         $puedeEliminar = auth()->user()->hasAnyRole(['administracion', 'directora']);
         $coloresCategoria = ['red_utp' => 'bg-primary', 'reunion_directores' => 'bg-info text-dark', 'mesa_convivencia' => 'bg-warning text-dark', 'daem_slep' => 'bg-secondary'];
+
+        // UX-F4-16: «Volver» regresa al buscador con los filtros previos si se llegó desde él.
+        $volverQuery = request('volver');
+        $rutaVolver = is_string($volverQuery) && str_starts_with($volverQuery, route('buscador.index'))
+            ? $volverQuery
+            : route('comunales.index');
     @endphp
 
     <div class="d-flex justify-content-between align-items-center sgd-page-header">
         <h1 class="h3">{{ $reunion->titulo }}</h1>
-        <a href="{{ route('comunales.index') }}" class="btn btn-outline-secondary">
+        <a href="{{ $rutaVolver }}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i> Volver
         </a>
     </div>
@@ -65,8 +71,8 @@
                                     <button type="button"
                                             class="btn btn-outline-danger btn-sm"
                                             data-confirm-modal
-                                            data-confirm-message="¿Está seguro de eliminar la reunión «{{ $reunion->titulo }}»? Se enviará a la papelera junto con sus compromisos y podrá recuperarse."
-                                            data-confirm-btn="Eliminar"
+                                            data-confirm-message="¿Enviar a papelera la reunión «{{ $reunion->titulo }}»? Se enviará junto con sus compromisos y podrás restaurarla desde la papelera."
+                                            data-confirm-btn="Enviar a papelera"
                                             data-confirm-icon="bi-trash"
                                             data-confirm-btn-class="btn-danger">
                                         <i class="bi bi-trash me-1"></i> Eliminar

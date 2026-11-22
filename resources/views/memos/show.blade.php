@@ -5,10 +5,16 @@
         $user = auth()->user();
         $puedeModificar = $user->hasAnyRole(['administracion']) || $memo->user_id === $user->id;
         $puedeEliminar = $user->hasAnyRole(['administracion', 'directora', 'inspectoria']);
+
+        // UX-F4-16: «Volver» regresa al buscador con los filtros previos si se llegó desde él.
+        $volverQuery = request('volver');
+        $rutaVolver = is_string($volverQuery) && str_starts_with($volverQuery, route('buscador.index'))
+            ? $volverQuery
+            : route('memos.index');
     @endphp
     <div class="d-flex justify-content-between align-items-center sgd-page-header">
         <h1 class="h3">Detalle del Memo/Oficio</h1>
-        <a href="{{ route('memos.index') }}" class="btn btn-outline-secondary">
+        <a href="{{ $rutaVolver }}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i> Volver
         </a>
     </div>
@@ -86,8 +92,8 @@
                             <button type="button"
                                     class="btn btn-outline-danger"
                                     data-confirm-modal
-                                    data-confirm-message="¿Está seguro de eliminar el memo/oficio «{{ $memo->folio }}»? Se enviará a la papelera y podrá recuperarse."
-                                    data-confirm-btn="Eliminar"
+                                    data-confirm-message="¿Enviar a papelera el memo/oficio «{{ $memo->folio }}»? Podrás restaurarlo desde la papelera."
+                                    data-confirm-btn="Enviar a papelera"
                                     data-confirm-icon="bi-trash"
                                     data-confirm-btn-class="btn-danger">
                                 <i class="bi bi-trash me-1"></i> Eliminar

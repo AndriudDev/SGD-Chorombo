@@ -24,8 +24,10 @@ class AuditoriaObserver
 
     public function updated(Model $modelo): void
     {
+        // QA-F4-006: restaurar solo mueve deleted_at; no es una edición del
+        // contenido y el evento restored ya registra la acción de restauración.
         $cambios = collect($modelo->getChanges())
-            ->except(['created_at', 'updated_at', 'archivo']);
+            ->except(['created_at', 'updated_at', 'archivo', 'deleted_at']);
 
         // Guardar únicamente el adjunto no es una edición del registro.
         if ($cambios->isEmpty()) {

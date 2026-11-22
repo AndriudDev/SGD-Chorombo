@@ -6,11 +6,17 @@
         $puedeEliminar = auth()->user()->hasAnyRole(['administracion', 'directora']);
         $coloresMotivo = ['conductual' => 'bg-danger', 'pedagogico' => 'bg-primary', 'administrativo' => 'bg-secondary'];
         $coloresEstado = ['programada' => 'bg-warning text-dark', 'asistio' => 'bg-success', 'no_asistio' => 'bg-danger', 'reprogramada' => 'bg-info text-dark'];
+
+        // UX-F4-16: «Volver» regresa al buscador con los filtros previos si se llegó desde él.
+        $volverQuery = request('volver');
+        $rutaVolver = is_string($volverQuery) && str_starts_with($volverQuery, route('buscador.index'))
+            ? $volverQuery
+            : route('citaciones.index');
     @endphp
 
     <div class="d-flex justify-content-between align-items-center sgd-page-header">
         <h1 class="h3">Citación a {{ $citacion->apoderado_nombre }}</h1>
-        <a href="{{ route('citaciones.index') }}" class="btn btn-outline-secondary">
+        <a href="{{ $rutaVolver }}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i> Volver
         </a>
     </div>
@@ -110,8 +116,8 @@
                         <button type="button"
                                 class="btn btn-outline-danger w-100"
                                 data-confirm-modal
-                                data-confirm-message="¿Está seguro de eliminar la citación a {{ $citacion->apoderado_nombre }}? Se enviará a la papelera y podrá recuperarse."
-                                data-confirm-btn="Eliminar"
+                                data-confirm-message="¿Enviar a papelera la citación a {{ $citacion->apoderado_nombre }}? Podrás restaurarla desde la papelera."
+                                data-confirm-btn="Enviar a papelera"
                                 data-confirm-icon="bi-trash"
                                 data-confirm-btn-class="btn-danger">
                             <i class="bi bi-trash me-1"></i> Eliminar citación

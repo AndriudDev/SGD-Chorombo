@@ -1,6 +1,10 @@
 @extends('layouts.admin')
 
 @section('content')
+    @php
+        // UX-F4-01: distinguir «sin documentos» de «sin coincidencias por filtros».
+        $hayFiltros = collect(request()->query())->except(['page', 'volver'])->isNotEmpty();
+    @endphp
     <div class="d-flex justify-content-between align-items-center sgd-page-header">
         <h1 class="h3 mb-0">
             Búsqueda Documental
@@ -43,18 +47,29 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label for="estado" class="form-label">Estado</label>
+                    {{-- UX-F4-02: los estados se agrupan por módulo aplicable --}}
+                    <label for="estado" class="form-label">Estado (según módulo)</label>
                     <select name="estado" id="estado" class="form-select">
                         <option value="">Todos</option>
-                        @foreach ($estados as $clave => $etiqueta)
-                            <option value="{{ $clave }}" {{ request('estado') === $clave ? 'selected' : '' }}>
-                                {{ $etiqueta }}
-                            </option>
-                        @endforeach
+                        <optgroup label="Permisos administrativos">
+                            @foreach (['pendiente', 'aprobado', 'rechazado', 'revocada'] as $clave)
+                                <option value="{{ $clave }}" {{ request('estado') === $clave ? 'selected' : '' }}>
+                                    {{ $estados[$clave] }}
+                                </option>
+                            @endforeach
+                        </optgroup>
+                        <optgroup label="Citaciones a apoderados">
+                            @foreach (['programada', 'asistio', 'no_asistio', 'reprogramada'] as $clave)
+                                <option value="{{ $clave }}" {{ request('estado') === $clave ? 'selected' : '' }}>
+                                    {{ $estados[$clave] }}
+                                </option>
+                            @endforeach
+                        </optgroup>
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label for="emisor" class="form-label">Emisor / registrado por</label>
+                    {{-- UX-F4-03: el filtro es por usuario registrador, no por emisor documental --}}
+                    <label for="emisor" class="form-label">Registrado por</label>
                     <select name="emisor" id="emisor" class="form-select">
                         <option value="">Todos</option>
                         @foreach ($usuarios as $usuario)
@@ -87,7 +102,7 @@
                             <th>Referencia</th>
                             <th>Fecha</th>
                             <th>Título / Asunto</th>
-                            <th>Emisor</th>
+                            <th>Registrado por</th>
                             <th>Estado</th>
                             <th class="text-end">Acciones</th>
                         </tr>
@@ -108,7 +123,8 @@
                                     @if ($fila['estado'])
                                         <span class="badge bg-info text-dark rounded-pill">{{ $fila['estado'] }}</span>
                                     @else
-                                        <span class="text-muted">&mdash;</span>
+                                        {{-- UX-F4-14: módulos sin estado propio --}}
+                                        <span class="text-muted">No aplica</span>
                                     @endif
                                 </td>
                                 <td class="text-end">
@@ -133,7 +149,11 @@
                         @empty
                             <tr>
                                 <td colspan="7" class="text-center text-muted py-4">
-                                    No hay coincidencias con los filtros aplicados.
+                                    @if ($hayFiltros)
+                                        Sin coincidencias con los filtros aplicados.
+                                    @else
+                                        Aún no hay documentos disponibles para tu perfil.
+                                    @endif
                                 </td>
                             </tr>
                         @endforelse
